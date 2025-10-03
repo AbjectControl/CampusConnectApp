@@ -1,0 +1,5 @@
+package com.example.cconnect
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()
