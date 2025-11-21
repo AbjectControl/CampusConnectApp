@@ -2,6 +2,7 @@ import 'package:cconnect/data/repositories/functions/FireBaseFunctions/authentic
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
 import 'package:cconnect/data/repositories/functions/ManagerFunctions/fun.dart';
 import 'package:cconnect/main.dart';
+import 'package:cconnect/utils/helpers/snack_bar.dart';
 import 'package:flutter/material.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -35,9 +36,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         MaterialPageRoute(builder: (_) => HomeScreen(user: user)),
       );
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      SnackbarService.error(e.toString());
     }
 
     setState(() => loading = false);

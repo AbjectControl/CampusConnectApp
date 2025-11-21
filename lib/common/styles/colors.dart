@@ -23,7 +23,7 @@ class AppColors {
   static const Color lightErrorContainer = Color(0xFFFEECEC);
   static const Color lightOnErrorContainer = Color(0xFF410E0B);
 
-  static const Color lightSurface = Color(0xFFFDFDFE);
+  static const Color lightSurface = Colors.white;
   static const Color lightOnSurface = Color(0xFF111827);
   static const Color lightOnSurfaceVariant = Color(0xFFCBD5E1);
   static const Color lightOutline = Color(0xFF94A3B8);

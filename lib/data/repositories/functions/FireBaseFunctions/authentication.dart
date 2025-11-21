@@ -10,6 +10,8 @@ class FirebaseAuthRepository implements IAuthRepository {
   /// Allowed university email domains — adjust to your university domains
   final List<String> _allowedDomains = ['lhr.nu.edu.pk'];
 
+  Stream<fb.User?> get authStateChanges => _firebaseAuth.authStateChanges();
+
   // ---------------------
   // Sign up
   // ---------------------

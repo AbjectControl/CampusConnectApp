@@ -1,3 +1,4 @@
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/material.dart';
 
 class SnackbarService {
@@ -7,23 +8,41 @@ class SnackbarService {
 
   static void show(
     String message, {
-    Color? backgroundColor,
-    Duration? duration,
+    String? title,
+    required ContentType contentType,
   }) {
-    final snackbar = SnackBar(
-      content: Text(message),
-      backgroundColor: backgroundColor ?? Colors.black87,
-      duration: duration ?? const Duration(seconds: 3),
+    final snackBar = SnackBar(
+      elevation: 0,
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: Colors.transparent,
+      content: AwesomeSnackbarContent(
+        title: title ?? _getTitle(contentType),
+        message: message,
+        contentType: contentType,
+      ),
     );
-    messengerKey.currentState?.showSnackBar(snackbar);
+
+    messengerKey.currentState?.hideCurrentSnackBar();
+    messengerKey.currentState?.showSnackBar(snackBar);
   }
 
-  static void success(String message) =>
-      show(message, backgroundColor: Colors.green);
+  static String _getTitle(ContentType type) {
+    if (type == ContentType.failure) return 'Oh Snap!';
+    if (type == ContentType.success) return 'Success!';
+    if (type == ContentType.warning) return 'Warning!';
+    if (type == ContentType.help) return 'Info';
+    return 'Notification';
+  }
 
-  static void error(String message) =>
-      show(message, backgroundColor: Colors.redAccent);
+  static void success(String message, {String? title}) =>
+      show(message, title: title, contentType: ContentType.success);
 
-  static void info(String message) =>
-      show(message, backgroundColor: Colors.blueAccent);
+  static void error(String message, {String? title}) =>
+      show(message, title: title, contentType: ContentType.failure);
+
+  static void info(String message, {String? title}) =>
+      show(message, title: title, contentType: ContentType.help);
+
+  static void warning(String message, {String? title}) =>
+      show(message, title: title, contentType: ContentType.warning);
 }

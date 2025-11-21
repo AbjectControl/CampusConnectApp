@@ -4,7 +4,7 @@ import 'package:cconnect/data/repositories/interfaces/iuser.dart';
 
 class FirebaseUserRepository implements IUserRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final String _collection = 'users'; // Firestore collection name
+  final String _collection = 'users';
 
   @override
   Future<User> getById(String id) async {
@@ -16,6 +16,16 @@ class FirebaseUserRepository implements IUserRepository {
       return User.fromJson(doc.data()!);
     } catch (e) {
       throw Exception('Failed to get user: $e');
+    }
+  }
+
+  @override
+  Future<User?> fetchUser(String id) async {
+    try {
+      final doc = await _firestore.collection(_collection).doc(id).get();
+      return doc.exists ? User.fromJson(doc.data()!) : null;
+    } catch (e) {
+      throw Exception('Failed to fetch user: $e');
     }
   }
 
@@ -43,32 +53,33 @@ class FirebaseUserRepository implements IUserRepository {
   @override
   Future<List<User>> searchByNameOrEmail(String query) async {
     try {
-      final lowerQuery = query.toLowerCase();
-      final snapshot = await _firestore
+      final q = query.toLowerCase();
+      final result = <User>[];
+
+      // 🔹 Search by displayName
+      final nameSnap = await _firestore
           .collection(_collection)
-          .where('displayName', isGreaterThanOrEqualTo: lowerQuery)
-          .where('displayName', isLessThanOrEqualTo: '$lowerQuery\uf8ff')
+          .where('displayName', isGreaterThanOrEqualTo: q)
+          .where('displayName', isLessThanOrEqualTo: '$q\uf8ff')
           .get();
 
-      final emailSnapshot = await _firestore
+      for (var doc in nameSnap.docs) {
+        result.add(User.fromJson(doc.data()));
+      }
+
+      // 🔹 Search by email (exact match)
+      final emailSnap = await _firestore
           .collection(_collection)
           .where('email', isEqualTo: query)
           .get();
 
-      final users = <User>[];
-
-      for (var doc in snapshot.docs) {
-        users.add(User.fromJson(doc.data()));
-      }
-
-      for (var doc in emailSnapshot.docs) {
-        // avoid duplicates
-        if (!users.any((u) => u.id == doc.id)) {
-          users.add(User.fromJson(doc.data()));
+      for (var doc in emailSnap.docs) {
+        if (!result.any((u) => u.id == doc.id)) {
+          result.add(User.fromJson(doc.data()));
         }
       }
 
-      return users;
+      return result;
     } catch (e) {
       throw Exception('Failed to search users: $e');
     }

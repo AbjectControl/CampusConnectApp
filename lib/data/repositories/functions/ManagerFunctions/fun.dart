@@ -24,28 +24,6 @@ import 'package:cconnect/data/repositories/interfaces/iresource.dart';
 import 'package:cconnect/data/repositories/interfaces/iuser.dart';
 import 'package:cconnect/utils/constraints/enums.dart';
 
-// class AuthManager {
-//   final IAuthRepository authRepo;
-//   final IUserRepository userRepo;
-
-//   AuthManager({required this.authRepo, required this.userRepo});
-
-//   Future<User> signInWithGoogle() async {
-//     final user = await authRepo.signInWithGoogle();
-//     // ensure user exists in app DB
-//     try {
-//       final existing = await userRepo.getById(user.id);
-//       return existing;
-//     } catch (e) {
-//       // new user -> create
-//       return userRepo.create(user);
-//     }
-//   }
-
-//   Future<void> signOut() => authRepo.signOut();
-
-//   Future<User?> currentUser() => authRepo.currentUser();
-// }
 class AuthManager {
   final IAuthRepository authRepo;
   final IUserRepository userRepo;

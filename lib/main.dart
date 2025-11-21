@@ -1,14 +1,24 @@
 import 'package:cconnect/data/models/userModel.dart';
-import 'package:cconnect/features/authentication/screens/login/tempLogin.dart';
+import 'package:cconnect/features/authentication/screens/login/screens/Login.dart';
+import 'package:cconnect/features/personalization/controllers/userProvider.dart';
+import 'package:cconnect/routes/auth_gate.dart';
+import 'package:cconnect/routes/routes.dart';
 import 'package:cconnect/utils/helpers/snack_bar.dart';
+import 'package:cconnect/utils/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => UserProvider())],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -20,7 +30,11 @@ class MyApp extends StatelessWidget {
       scaffoldMessengerKey: SnackbarService.messengerKey,
       debugShowCheckedModeBanner: false,
       title: 'Campus Connect',
-      home: const LoginScreen(), // Start with login screen
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
+      onGenerateRoute: AppRoutes.generateRoute,
+      home: const AuthGate(),
     );
   }
 }
