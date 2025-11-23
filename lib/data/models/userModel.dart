@@ -9,6 +9,8 @@ class User {
   String? about;
   DateTime? lastSeen;
   final UserRole role;
+  final String? studentId; // e.g., l230989
+  final String? phone;
   Map<String, dynamic>? metadata; // e.g., department, semester, availability
 
   User({
@@ -19,6 +21,8 @@ class User {
     this.about,
     this.lastSeen,
     this.role = UserRole.student,
+    this.studentId,
+    this.phone,
     this.metadata,
   });
 
@@ -32,6 +36,8 @@ class User {
         ? DateTime.parse(json['lastSeen'] as String)
         : null,
     role: _roleFromString(json['role'] as String?),
+    studentId: json['studentId'] as String?,
+    phone: json['phone'] as String?,
     metadata: json['metadata'] as Map<String, dynamic>?,
   );
 
@@ -43,6 +49,8 @@ class User {
     'about': about,
     'lastSeen': lastSeen?.toIso8601String(),
     'role': describeEnum(role),
+    'studentId': studentId,
+    'phone': phone,
     'metadata': metadata ?? {},
   };
 

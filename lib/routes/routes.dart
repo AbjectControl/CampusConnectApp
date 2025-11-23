@@ -1,8 +1,9 @@
 import 'package:cconnect/common/widgets/navigation/main_nav_screen.dart';
 import 'package:cconnect/features/authentication/screens/login/screens/Login.dart';
 import 'package:cconnect/features/authentication/screens/onboarding/onboarding_screen.dart';
-import 'package:cconnect/features/authentication/screens/signup/tempSignup.dart';
-import 'package:cconnect/main.dart';
+import 'package:cconnect/features/authentication/screens/passwordConfig/screens/forgot_password_screen.dart';
+import 'package:cconnect/features/authentication/screens/signup/screens/email_verify_screen.dart';
+import 'package:cconnect/features/authentication/screens/signup/signup_screen.dart';
 import 'package:cconnect/routes/auth_gate.dart';
 import 'package:flutter/material.dart';
 
@@ -15,13 +16,12 @@ class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String authGate = '/auth-gate';
   static const String mainNav = '/main-nav';
+  static const String verifyMailScreen = '/verify-mail';
+  static const String forgotPassword = '/forgot-password';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case home:
-        // Assuming HomeScreen requires a user, but for routing purposes we might need to handle this differently
-        // or rely on MainNavScreen to show Home.
-        // For now, let's route to MainNavScreen as 'home'
         return MaterialPageRoute(builder: (_) => const MainNavScreen());
       case login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
@@ -33,6 +33,11 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const AuthGate());
       case mainNav:
         return MaterialPageRoute(builder: (_) => const MainNavScreen());
+      case verifyMailScreen:
+        final email = settings.arguments as String? ?? '';
+        return MaterialPageRoute(builder: (_) => EmailVerifyScreen(email: email));
+      case forgotPassword:
+        return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
       default:
         return MaterialPageRoute(builder: (_) => const AuthGate());
     }

@@ -50,6 +50,7 @@ class FirebaseAuthRepository implements IAuthRepository {
   @override
   Future<User> signInWithEmail(String email, String password) async {
     try {
+      await requireUniversityEmail(email);
       final fb.UserCredential userCredential = await _firebaseAuth
           .signInWithEmailAndPassword(email: email, password: password);
 
@@ -186,6 +187,7 @@ class FirebaseAuthRepository implements IAuthRepository {
   @override
   Future<void> resetPassword(String email) async {
     try {
+      await requireUniversityEmail(email);
       await _firebaseAuth.sendPasswordResetEmail(email: email);
       SnackbarService.success('Password reset email sent.');
     } on fb.FirebaseAuthException catch (e) {
@@ -242,6 +244,8 @@ class FirebaseAuthRepository implements IAuthRepository {
       photoUrl: fUser.photoURL,
       lastSeen: DateTime.now(),
       role: UserRole.student,
+      studentId: null,
+      phone: null,
       metadata: {},
     );
   }

@@ -4,6 +4,7 @@ import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/authentication.dart';
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
 import 'package:cconnect/features/authentication/screens/onboarding/onboarding_screen.dart';
+import 'package:cconnect/features/personalization/screens/complete_profile/complete_profile_screen.dart';
 import 'package:cconnect/features/personalization/controllers/userProvider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
@@ -52,8 +53,18 @@ class AuthGate extends StatelessWidget {
                   ).setUser(appUser);
                 });
 
-                // Check for incomplete profile if needed
-                // For now, go straight to MainNavScreen
+                // Check for incomplete profile
+                // We check name, studentId, and phone (in metadata)
+                // PhotoUrl is optional but user code checked it. I'll check it too as requested.
+                final isProfileIncomplete = appUser.displayName.isEmpty ||
+                    (appUser.studentId == null || appUser.studentId!.isEmpty) ||
+                    (appUser.phone == null || appUser.phone!.isEmpty) ||
+                    (appUser.photoUrl == null || appUser.photoUrl!.isEmpty);
+
+                if (isProfileIncomplete) {
+                  return const CompleteProfileScreen();
+                }
+
                 return const MainNavScreen();
               }
 

@@ -4,6 +4,7 @@ import 'package:cconnect/data/repositories/functions/FireBaseFunctions/authentic
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
 import 'package:cconnect/features/authentication/controllers/Login/loginController.dart';
 import 'package:cconnect/features/authentication/screens/login/widgets/login_form.dart';
+import 'package:cconnect/routes/routes.dart';
 import 'package:cconnect/utils/constraints/appicons.dart';
 import 'package:cconnect/utils/constraints/sizing.dart';
 import 'package:cconnect/utils/constraints/strings.dart';
@@ -80,7 +81,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           onStop: () => setLoading(false),
                           onError: (msg) => SnackbarService.error(msg),
                           onSuccess: () {
-                            Navigator.pushReplacementNamed(context, "/home");
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              AppRoutes.authGate,
+                              (route) => false,
+                            );
                           },
                         );
                       },
@@ -123,8 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         GestureDetector(
                           onTap: () {
-                             // Navigate to sign up
-                             SnackbarService.info("Sign Up not implemented yet");
+                             Navigator.pushReplacementNamed(context, AppRoutes.signUp);
                           },
                           child: Text(
                             AppStrings.signUp,

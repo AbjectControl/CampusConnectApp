@@ -1,4 +1,8 @@
-import 'package:cconnect/features/authentication/screens/login/screens/Login.dart';
+import 'package:cconnect/features/academics/screens/academics_screen.dart';
+import 'package:cconnect/features/chat/screens/chat_screen.dart';
+import 'package:cconnect/features/community/screens/community_screen.dart';
+import 'package:cconnect/features/home/screens/home_screen.dart';
+import 'package:cconnect/features/personalization/screens/profile/profile_screen.dart';
 import 'package:cconnect/utils/constraints/appicons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -14,10 +18,11 @@ class _MainNavScreenState extends State<MainNavScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = const [
-    Center(child: Text("Home Screen")), // Placeholder
-    Center(child: Text("Favorites Screen")), // Placeholder
-    Center(child: Text("Cart Screen")), // Placeholder
-    Center(child: Text("Profile Screen")), // Placeholder
+    HomeScreen(),
+    CommunityScreen(),
+    AcademicsScreen(),
+    ChatScreen(),
+    ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -38,7 +43,7 @@ class _MainNavScreenState extends State<MainNavScreen> {
         selectedItemColor: selectedColor,
         unselectedItemColor: unselectedColor,
         showSelectedLabels: true,
-        showUnselectedLabels: false,
+        showUnselectedLabels: true,
         items: [
           BottomNavigationBarItem(
             icon: SvgPicture.string(
@@ -52,29 +57,48 @@ class _MainNavScreenState extends State<MainNavScreen> {
           ),
           BottomNavigationBarItem(
             icon: SvgPicture.string(
-              heartIcon,
+              communityIcon,
               colorFilter: ColorFilter.mode(
                 _selectedIndex == 1 ? selectedColor : unselectedColor,
                 BlendMode.srcIn,
               ),
             ),
-            label: "Favorites",
+            label: "Community",
+          ),
+          BottomNavigationBarItem(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _selectedIndex == 2
+                    ? selectedColor.withOpacity(0.1)
+                    : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: SvgPicture.string(
+                academicsIcon,
+                colorFilter: ColorFilter.mode(
+                  _selectedIndex == 2 ? selectedColor : unselectedColor,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            label: "Academics",
           ),
           BottomNavigationBarItem(
             icon: SvgPicture.string(
-              chatIcon,
+              messageIcon,
               colorFilter: ColorFilter.mode(
-                _selectedIndex == 2 ? selectedColor : unselectedColor,
+                _selectedIndex == 3 ? selectedColor : unselectedColor,
                 BlendMode.srcIn,
               ),
             ),
-            label: "Cart",
+            label: "Chat",
           ),
           BottomNavigationBarItem(
             icon: SvgPicture.string(
               userIcon,
               colorFilter: ColorFilter.mode(
-                _selectedIndex == 3 ? selectedColor : unselectedColor,
+                _selectedIndex == 4 ? selectedColor : unselectedColor,
                 BlendMode.srcIn,
               ),
             ),

@@ -1,3 +1,4 @@
+import 'package:cconnect/routes/routes.dart';
 import 'package:cconnect/utils/constraints/sizing.dart';
 import 'package:cconnect/utils/constraints/strings.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +50,14 @@ class LoginForm extends StatelessWidget {
             ),
             obscureText: true,
             validator: (v) => v!.isEmpty ? AppStrings.enterPassword : null,
+          ),
+          Sizing.h8,
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
+              child: const Text(AppStrings.forgotPassword),
+            ),
           ),
           Sizing.h24,
           SizedBox(
