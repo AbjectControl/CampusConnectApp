@@ -1,3 +1,5 @@
+import 'package:cconnect/common/widgets/appbar/custom_appbar.dart';
+import 'package:cconnect/utils/constraints/strings.dart';
 import 'package:flutter/material.dart';
 
 class CommunityScreen extends StatelessWidget {
@@ -5,12 +7,12 @@ class CommunityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Community"),
+    return const Scaffold(
+      appBar: CustomAppBar(
+        title: AppStrings.community,
         centerTitle: true,
       ),
-      body: const Center(
+      body: Center(
         child: Text("Community Screen"),
       ),
     );

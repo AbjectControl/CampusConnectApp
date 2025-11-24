@@ -1,5 +1,6 @@
 import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/features/authentication/screens/login/screens/Login.dart';
+import 'package:cconnect/features/chat/controllers/chat_provider.dart';
 import 'package:cconnect/features/personalization/controllers/userProvider.dart';
 import 'package:cconnect/routes/auth_gate.dart';
 import 'package:cconnect/routes/routes.dart';
@@ -15,7 +16,10 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => UserProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
+      ],
       child: MyApp(),
     ),
   );

@@ -78,6 +78,11 @@ class FirebaseAuthRepository implements IAuthRepository {
   Future<void> signOut() async {
     try {
       await _firebaseAuth.signOut();
+      // Note: The caller (UI) should also call UserProvider.clearUser() 
+      // or we can't access context here easily. 
+      // Ideally, the UI calling signOut should handle the provider clearing.
+      // But wait, I can't access provider here. 
+      // I will update the UI where signOut is called.
       SnackbarService.success('Signed out successfully.');
     } on fb.FirebaseAuthException catch (e) {
       final msg = _mapFirebaseAuthExceptionToErrorMessage(e);

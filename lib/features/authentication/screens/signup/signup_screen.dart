@@ -16,7 +16,7 @@ class SignUpScreen extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => SignUpController(
         authRepo: FirebaseAuthRepository(),
-        userRepo: FirebaseUserRepository(),
+        userRepo: UserRepository.instance,
       ),
       child: Consumer<SignUpController>(
         builder: (context, controller, _) {

@@ -114,7 +114,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           metadata: currentUser.metadata,
         );
 
-        await FirebaseUserRepository().update(updatedUser);
+        await UserRepository.instance.update(updatedUser);
         userProvider.setUser(updatedUser);
 
         SnackbarService.success("Profile updated successfully");

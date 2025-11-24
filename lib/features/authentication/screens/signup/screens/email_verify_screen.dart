@@ -54,9 +54,22 @@ class _EmailVerificationScreenState extends State<EmailVerifyScreen> {
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('A verification email was sent to ${widget.email}.'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Text(
+                      'A verification email was sent to ${widget.email}.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
                   Sizing.h8,
-                  const Text('Please verify your email to continue.'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: const Text(
+                      'Please verify your email to continue.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                   Sizing.h16,
                   Padding(
                     padding: Sizing.paddingAll16,

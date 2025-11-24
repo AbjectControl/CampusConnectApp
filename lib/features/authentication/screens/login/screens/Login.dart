@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   late final loginCtrl = LoginController(
     authRepo: FirebaseAuthRepository(),
-    userRepo: FirebaseUserRepository(),
+    userRepo: UserRepository.instance,
   );
 
   void setLoading(bool v) {

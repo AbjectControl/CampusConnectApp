@@ -29,7 +29,7 @@ class AuthGate extends StatelessWidget {
           final user = snapshot.data!;
 
           return FutureBuilder<User?>(
-            future: FirebaseUserRepository().fetchUser(user.uid),
+            future: UserRepository.instance.fetchUser(user.uid),
             builder: (context, userSnapshot) {
               if (userSnapshot.connectionState == ConnectionState.waiting) {
                 return Scaffold(

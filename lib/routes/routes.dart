@@ -4,6 +4,7 @@ import 'package:cconnect/features/authentication/screens/onboarding/onboarding_s
 import 'package:cconnect/features/authentication/screens/passwordConfig/screens/forgot_password_screen.dart';
 import 'package:cconnect/features/authentication/screens/signup/screens/email_verify_screen.dart';
 import 'package:cconnect/features/authentication/screens/signup/signup_screen.dart';
+import 'package:cconnect/features/personalization/screens/complete_profile/complete_profile_screen.dart';
 import 'package:cconnect/routes/auth_gate.dart';
 import 'package:flutter/material.dart';
 
@@ -18,6 +19,7 @@ class AppRoutes {
   static const String mainNav = '/main-nav';
   static const String verifyMailScreen = '/verify-mail';
   static const String forgotPassword = '/forgot-password';
+  static const String completeProfile = '/complete-profile';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -38,6 +40,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => EmailVerifyScreen(email: email));
       case forgotPassword:
         return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
+      case completeProfile:
+        return MaterialPageRoute(builder: (_) => const CompleteProfileScreen());
       default:
         return MaterialPageRoute(builder: (_) => const AuthGate());
     }
