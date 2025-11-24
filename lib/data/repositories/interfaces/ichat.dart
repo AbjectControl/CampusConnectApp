@@ -9,4 +9,5 @@ abstract class IChatRepository {
     int limit = 50,
   });
   Future<void> markRead(String conversationId, String messageId, String userId);
+  Stream<List<Map<String, dynamic>>> getConversations(String userId);
 }

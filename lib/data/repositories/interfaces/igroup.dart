@@ -4,4 +4,5 @@ abstract class IGroupRepository {
   Future<GroupCommunity> createGroup(GroupCommunity group);
   Future<void> joinGroup(String groupId, String userId);
   Future<List<GroupCommunity>> listGroupsForUser(String userId);
+  Future<String> createGroupChat(String name, List<String> userIds, String creatorId);
 }

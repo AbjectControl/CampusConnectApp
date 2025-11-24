@@ -1,6 +1,7 @@
 import 'package:cconnect/data/models/message.dart';
 import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/chat_repository.dart';
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
 import 'package:cconnect/utils/constraints/enums.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -12,7 +13,7 @@ class ChatController extends ChangeNotifier {
   ChatController({required this.currentUserId});
 
   Stream<List<Message>> getMessages(String conversationId) {
-    return _repository.getMessages(conversationId);
+    return _repository.subscribeToMessages(conversationId);
   }
 
   Future<void> sendMessage(String conversationId, String text, {MessageType type = MessageType.text}) async {
@@ -34,8 +35,13 @@ class ChatController extends ChangeNotifier {
     await _repository.deleteMessage(messageId);
   }
 
-  Stream<List<User>> searchUsers(String query) {
-    return _repository.searchUsers(query);
+  Stream<List<User>> searchUsers(String query) async* {
+    if (query.isEmpty) {
+      yield [];
+      return;
+    }
+    final users = await UserRepository.instance.searchByNameOrEmail(query);
+    yield users;
   }
   
   Future<User?> getUser(String userId) async {

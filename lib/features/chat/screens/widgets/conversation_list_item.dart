@@ -64,6 +64,51 @@ class ConversationListItem extends StatelessWidget {
       orElse: () => 'Unknown',
     );
 
+    // Try to get denormalized data first
+    final userData = conversation['userData'] as Map<String, dynamic>?;
+    final otherUserData = userData?[otherUserId] as Map<String, dynamic>?;
+
+    if (otherUserData != null) {
+      // Use denormalized data (FAST!)
+      final displayName = otherUserData['displayName'] ?? 'Unknown';
+      final photoUrl = otherUserData['photoUrl'];
+
+      return ListTile(
+        leading: CircleAvatar(
+          backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+          child: photoUrl == null ? const Icon(Icons.person) : null,
+        ),
+        title: Text(
+          displayName,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          conversation['lastMessage'] ?? '',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Text(
+          _formatTime(conversation['lastMessageTime']),
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        onTap: () async {
+          // We still need the full User object for the chat screen
+          // But we can fetch it when tapped, which is fine.
+          // Or we can construct a partial User object.
+          final user = await chatProvider.getUser(otherUserId);
+          if (context.mounted && user != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => FriendsChatScreen(targetUser: user),
+              ),
+            );
+          }
+        },
+      );
+    }
+
+    // Fallback to async fetch (Slow, but necessary for old conversations)
     return FutureBuilder<User?>(
       future: chatProvider.getUser(otherUserId),
       builder: (context, userSnapshot) {

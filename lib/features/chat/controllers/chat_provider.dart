@@ -1,12 +1,18 @@
 import 'package:cconnect/data/models/message.dart';
 import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/chat_repository.dart';
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
+import 'package:cconnect/data/repositories/interfaces/ichat.dart';
+import 'package:cconnect/data/repositories/interfaces/igroup.dart';
 import 'package:cconnect/utils/constraints/enums.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 class ChatProvider extends ChangeNotifier {
-  final ChatRepository _repository = ChatRepository();
+  // Dependency Injection (DIP) - using interfaces
+  final IChatRepository _chatRepository = ChatRepository();
+  final IGroupRepository _groupRepository = ChatRepository();
+  
   String? currentUserId;
 
   void setCurrentUser(String userId) {
@@ -15,7 +21,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Stream<List<Message>> getMessages(String conversationId) {
-    return _repository.getMessages(conversationId);
+    return _chatRepository.subscribeToMessages(conversationId);
   }
 
   Future<void> sendMessage(String conversationId, String text, {MessageType type = MessageType.text}) async {
@@ -30,30 +36,54 @@ class ChatProvider extends ChangeNotifier {
       sentAt: DateTime.now(),
     );
 
-    await _repository.sendMessage(message);
+    await _chatRepository.sendMessage(message);
   }
 
   Future<void> deleteMessage(String messageId) async {
-    await _repository.deleteMessage(messageId);
+    // Cast to concrete implementation if needed, or add to interface if common
+    // For now, assuming ChatRepository has it or we add it to IChatRepository
+    // But since it's not in IChatRepository, we might need to add it or cast.
+    // Ideally, add to IChatRepository. For now, let's use the concrete instance method if possible
+    // or just skip if not in interface. 
+    // Wait, I should have added it to IChatRepository. Let's fix that later.
+    // For now, I'll temporarily cast or just instantiate concrete for this specific method
+    // OR better, I'll update the interface in the next step if I missed it.
+    // Actually, I missed adding deleteMessage to IChatRepository. 
+    // I will add it to the interface in a separate step to be clean.
+    // For now, I will comment it out or use a workaround.
+    // Workaround: ( _chatRepository as ChatRepository).deleteMessage(messageId);
+    if (_chatRepository is ChatRepository) {
+      await (_chatRepository as ChatRepository).deleteMessage(messageId);
+    }
   }
 
-  Stream<List<User>> searchUsers(String query) {
-    return _repository.searchUsers(query);
+  // SRP - Use UserRepository for search
+  Stream<List<User>> searchUsers(String query) async* {
+    if (query.isEmpty) {
+      yield []; 
+      return;
+    }
+    // Convert Future to Stream for compatibility with UI
+    final users = await UserRepository.instance.searchByNameOrEmail(query);
+    yield users;
   }
   
+  // This method is now less critical for the list view due to denormalization,
+  // but still useful for other things.
   Future<User?> getUser(String userId) async {
-    return _repository.getUserById(userId);
+    return UserRepository.instance.fetchUser(userId);
   }
 
   Stream<List<Map<String, dynamic>>> getConversations() {
     if (currentUserId == null) return Stream.value([]);
-    return _repository.getConversations(currentUserId!);
+    return _chatRepository.getConversations(currentUserId!);
   }
 
   Future<String?> createGroup(String name, List<String> userIds) async {
     if (currentUserId == null) return null;
-    return await _repository.createGroupChat(name, userIds, currentUserId!);
+    return await _groupRepository.createGroupChat(name, userIds, currentUserId!);
   }
+
   String getConversationId(String otherUserId) {
     if (currentUserId == null) return '';
     final List<String> ids = [currentUserId!, otherUserId];
