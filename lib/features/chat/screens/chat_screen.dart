@@ -1,11 +1,10 @@
 import 'package:cconnect/common/widgets/appbar/custom_appbar.dart';
 import 'package:cconnect/common/widgets/forms/custom_textformfield.dart';
 import 'package:cconnect/data/models/userModel.dart';
-
 import 'package:cconnect/features/chat/controllers/chat_provider.dart';
-import 'package:cconnect/features/chat/screens/friends/friends_chat_screen.dart';
 import 'package:cconnect/features/chat/screens/groups/create_group_screen.dart';
-import 'package:cconnect/features/chat/screens/groups/group_chat_screen.dart';
+import 'package:cconnect/features/chat/screens/widgets/conversation_list_item.dart';
+import 'package:cconnect/features/chat/screens/widgets/user_search_item.dart';
 import 'package:cconnect/features/personalization/controllers/userProvider.dart';
 import 'package:cconnect/utils/constraints/appicons.dart';
 import 'package:cconnect/utils/constraints/enums.dart';
@@ -109,24 +108,9 @@ class _ChatScreenState extends State<ChatScreen> {
         return ListView.builder(
           itemCount: users.length,
           itemBuilder: (context, index) {
-            final user = users[index];
-            if (user.id == chatProvider.currentUserId) return const SizedBox.shrink();
-
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
-                child: user.photoUrl == null ? const Icon(Icons.person) : null,
-              ),
-              title: Text(user.displayName),
-              subtitle: Text(user.studentId ?? ''),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => FriendsChatScreen(targetUser: user),
-                  ),
-                );
-              },
+            return UserSearchItem(
+              user: users[index],
+              chatProvider: chatProvider,
             );
           },
         );
@@ -135,9 +119,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildRecentChats(ChatProvider chatProvider) {
-    // We use the passed chatProvider
-
-    
     // Ensure current user is set
     if (chatProvider.currentUserId == null) {
        final currentUser = Provider.of<UserProvider>(context, listen: false).user;
@@ -172,89 +153,13 @@ class _ChatScreenState extends State<ChatScreen> {
         return ListView.builder(
           itemCount: conversations.length,
           itemBuilder: (context, index) {
-            final conversation = conversations[index];
-            final isGroup = conversation['isGroup'] == true;
-            
-            if (isGroup) {
-              return ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.group),
-                ),
-                title: Text(conversation['name'] ?? 'Group', style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(
-                  conversation['lastMessage'] ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: Text(
-                  _formatTime(conversation['lastMessageTime']),
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => GroupChatScreen(
-                        groupId: conversation['id'],
-                        groupName: conversation['name'] ?? 'Group',
-                      ),
-                    ),
-                  );
-                },
-              );
-            }
-
-            final participants = List<String>.from(conversation['participants'] ?? []);
-            final otherUserId = participants.firstWhere(
-              (id) => id != chatProvider.currentUserId, 
-              orElse: () => 'Unknown',
-            );
-            
-            return FutureBuilder<User?>(
-              future: chatProvider.getUser(otherUserId),
-              builder: (context, userSnapshot) {
-                if (!userSnapshot.hasData) return const SizedBox.shrink();
-                final user = userSnapshot.data!;
-                
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
-                    child: user.photoUrl == null ? const Icon(Icons.person) : null,
-                  ),
-                  title: Text(user.displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(
-                    conversation['lastMessage'] ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: Text(
-                    _formatTime(conversation['lastMessageTime']),
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => FriendsChatScreen(targetUser: user),
-                      ),
-                    );
-                  },
-                );
-              },
+            return ConversationListItem(
+              conversation: conversations[index],
+              chatProvider: chatProvider,
             );
           },
         );
       },
     );
-  }
-
-  String _formatTime(String? isoString) {
-    if (isoString == null) return '';
-    final date = DateTime.parse(isoString);
-    final now = DateTime.now();
-    if (date.year == now.year && date.month == now.month && date.day == now.day) {
-      return "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
-    }
-    return "${date.day}/${date.month}";
   }
 }

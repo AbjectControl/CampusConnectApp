@@ -1,7 +1,7 @@
 import 'package:cconnect/common/widgets/appbar/custom_appbar.dart';
 import 'package:cconnect/common/widgets/forms/custom_textformfield.dart';
 import 'package:cconnect/data/models/mentorProfile.dart';
-import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/mentorship_repository.dart';
 import 'package:cconnect/features/personalization/controllers/userProvider.dart';
 import 'package:cconnect/utils/constraints/sizing.dart';
 import 'package:flutter/material.dart';
@@ -46,7 +46,7 @@ class _MentorshipRequestScreenState extends State<MentorshipRequestScreen> {
         approved: false, // Pending admin approval
       );
 
-      await UserRepository.instance.submitMentorshipRequest(mentorProfile);
+      await MentorshipRepository.instance.submitMentorshipRequest(mentorProfile);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

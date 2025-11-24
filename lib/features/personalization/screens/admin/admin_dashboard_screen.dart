@@ -1,4 +1,6 @@
 import 'package:cconnect/data/models/userModel.dart';
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/admin_repository.dart';
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/mentorship_repository.dart';
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
 import 'package:flutter/material.dart';
 
@@ -61,7 +63,7 @@ class _UsersTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<User>>(
-      stream: UserRepository.instance.getAllUsers(),
+      stream: AdminRepository.instance.getAllUsers(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -87,7 +89,7 @@ class _UsersTab extends StatelessWidget {
                   try {
                     switch (value) {
                       case 'ban':
-                        await UserRepository.instance.banUser(user.id);
+                        await AdminRepository.instance.banUser(user.id);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('${user.displayName} has been banned')),
@@ -95,7 +97,7 @@ class _UsersTab extends StatelessWidget {
                         }
                         break;
                       case 'unban':
-                        await UserRepository.instance.unbanUser(user.id);
+                        await AdminRepository.instance.unbanUser(user.id);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('${user.displayName} has been unbanned')),
@@ -103,7 +105,7 @@ class _UsersTab extends StatelessWidget {
                         }
                         break;
                       case 'promote':
-                        await UserRepository.instance.promoteToAdmin(user.id);
+                        await AdminRepository.instance.promoteToAdmin(user.id);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('${user.displayName} promoted to Admin')),
@@ -140,7 +142,7 @@ class _MentorshipTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: UserRepository.instance.getMentorshipRequests(),
+      stream: MentorshipRepository.instance.getMentorshipRequests(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -200,7 +202,7 @@ class _MentorshipTab extends StatelessWidget {
                               TextButton(
                                 onPressed: () async {
                                   try {
-                                    await UserRepository.instance.rejectMentorshipRequest(request['id']);
+                                    await MentorshipRepository.instance.rejectMentorshipRequest(request['id']);
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(content: Text('Request rejected')),
@@ -220,7 +222,7 @@ class _MentorshipTab extends StatelessWidget {
                               ElevatedButton(
                                 onPressed: () async {
                                   try {
-                                    await UserRepository.instance.approveMentorshipRequest(
+                                    await MentorshipRepository.instance.approveMentorshipRequest(
                                       request['id'],
                                       request['userId'],
                                     );
@@ -262,7 +264,7 @@ class _AnalyticsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, int>>(
-      future: UserRepository.instance.getUserStats(),
+      future: AdminRepository.instance.getUserStats(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
