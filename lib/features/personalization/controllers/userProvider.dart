@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:cconnect/data/models/userModel.dart';
+import 'package:cconnect/data/models/userModel.dart' as model;
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
 
 class UserProvider extends ChangeNotifier {
-  User? _user;
-  User? get user => _user;
+  model.User? _user;
+  model.User? get user => _user;
 
-  void setUser(User user) {
+  void setUser(model.User user) {
     _user = user;
     notifyListeners();
   }
@@ -15,17 +16,35 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Helper to fetch other users (not the current user)
-  Future<User?> fetchUserById(String id) async {
-    // This should ideally be in a Repository, but for quick access in UI:
-    // We can use the existing FirebaseUserRepository.
-    // Since we can't easily inject repo here without more boilerplate, 
-    // we'll instantiate it or pass it. 
-    // Actually, let's just use the repo directly here for now.
-    // But wait, UserProvider shouldn't depend on Repo directly if we want clean architecture.
-    // However, for this MVP fix, I'll allow it or better, use the ChatController?
-    // The ChatScreen has access to ChatController. 
-    // Let's move this logic to ChatController or just use a Repository in the FutureBuilder.
-    return null; 
+  Future<void> updateOnlineStatus(bool isOnline) async {
+    if (_user == null) return;
+    
+    final updatedUser = model.User(
+      id: _user!.id,
+      displayName: _user!.displayName,
+      email: _user!.email,
+      photoUrl: _user!.photoUrl,
+      about: _user!.about,
+      lastSeen: isOnline ? null : DateTime.now(),
+      isOnline: isOnline,
+      role: _user!.role,
+      studentId: _user!.studentId,
+      phone: _user!.phone,
+      department: _user!.department,
+      section: _user!.section,
+      metadata: _user!.metadata,
+    );
+
+    // Update local state
+    _user = updatedUser;
+    notifyListeners();
+
+    // Update remote
+    // We use a fire-and-forget approach or await if critical
+    try {
+      await UserRepository.instance.update(updatedUser);
+    } catch (e) {
+      print("Failed to update online status: $e");
+    }
   }
 }

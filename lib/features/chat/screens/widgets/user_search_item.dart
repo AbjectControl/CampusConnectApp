@@ -1,6 +1,7 @@
 import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/features/chat/controllers/chat_provider.dart';
 import 'package:cconnect/features/chat/screens/friends/friends_chat_screen.dart';
+import 'package:cconnect/features/chat/screens/widgets/user_info_popup.dart';
 import 'package:flutter/material.dart';
 
 class UserSearchItem extends StatelessWidget {
@@ -25,11 +26,9 @@ class UserSearchItem extends StatelessWidget {
       title: Text(user.displayName),
       subtitle: Text(user.studentId ?? ''),
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => FriendsChatScreen(targetUser: user),
-          ),
+        showDialog(
+          context: context,
+          builder: (_) => UserInfoPopup(user: user),
         );
       },
     );

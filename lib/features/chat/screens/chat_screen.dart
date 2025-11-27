@@ -3,7 +3,9 @@ import 'package:cconnect/common/widgets/forms/custom_textformfield.dart';
 import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/features/chat/controllers/chat_provider.dart';
 import 'package:cconnect/features/chat/screens/groups/create_group_screen.dart';
+import 'package:cconnect/data/models/groupCommunity.dart';
 import 'package:cconnect/features/chat/screens/widgets/conversation_list_item.dart';
+import 'package:cconnect/features/chat/screens/widgets/group_info_popup.dart';
 import 'package:cconnect/features/chat/screens/widgets/user_search_item.dart';
 import 'package:cconnect/features/personalization/controllers/userProvider.dart';
 import 'package:cconnect/utils/constraints/appicons.dart';
@@ -94,25 +96,72 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildSearchResults(ChatProvider chatProvider) {
-    return StreamBuilder<List<User>>(
-      stream: chatProvider.searchUsers(_searchQuery),
-      builder: (context, snapshot) {
+    return FutureBuilder(
+      future: Future.wait([
+        chatProvider.searchGroups(_searchQuery),
+        chatProvider.searchUsers(_searchQuery).first,
+      ]),
+      builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text("No users found"));
+        
+        final groups = snapshot.data?[0] as List<dynamic>? ?? [];
+        final users = snapshot.data?[1] as List<User>? ?? [];
+
+        if (groups.isEmpty && users.isEmpty) {
+          return const Center(child: Text("No results found"));
         }
 
-        final users = snapshot.data!;
-        return ListView.builder(
-          itemCount: users.length,
-          itemBuilder: (context, index) {
-            return UserSearchItem(
-              user: users[index],
-              chatProvider: chatProvider,
-            );
-          },
+        return CustomScrollView(
+          slivers: [
+            if (groups.isNotEmpty) ...[
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text("Groups", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                ),
+              ),
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final group = groups[index] as GroupCommunity;
+                    return ListTile(
+                      leading: const CircleAvatar(child: Icon(Icons.group)),
+                      title: Text(group.name),
+                      subtitle: Text("${group.members.length} members"),
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => GroupInfoPopup(group: group),
+                        );
+                      },
+                    );
+                  },
+                  childCount: groups.length,
+                ),
+              ),
+            ],
+            if (users.isNotEmpty) ...[
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text("People", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                ),
+              ),
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    return UserSearchItem(
+                      user: users[index],
+                      chatProvider: chatProvider,
+                    );
+                  },
+                  childCount: users.length,
+                ),
+              ),
+            ],
+          ],
         );
       },
     );

@@ -36,7 +36,19 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
     }
     
     _conversationId = chatProvider.getConversationId(widget.targetUser.id);
+    
+    // Mark as read after a delay to allow user to see unread messages
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Delay marking as read by 2 seconds so user can see highlighted messages
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          chatProvider.markRead(_conversationId, ''); // Mark conversation as read
+        }
+      });
+    });
   }
+
+
 
   void _sendMessage() {
     if (_messageController.text.trim().isEmpty) return;
@@ -54,40 +66,56 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: widget.targetUser.photoUrl != null 
-                  ? NetworkImage(widget.targetUser.photoUrl!) 
-                  : null,
-              child: widget.targetUser.photoUrl == null 
-                  ? const Icon(Icons.person, size: 20) 
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+        title: StreamBuilder<User?>(
+          stream: Provider.of<ChatProvider>(context, listen: false).getUserStream(widget.targetUser.id),
+          builder: (context, snapshot) {
+            final user = snapshot.data ?? widget.targetUser;
+            final isOnline = user.isOnline;
+            final lastSeen = user.lastSeen;
+
+            String statusText = 'Offline';
+            if (isOnline) {
+              statusText = 'Online';
+            } else if (lastSeen != null) {
+              statusText = 'Last seen: ${_formatLastSeen(lastSeen)}';
+            }
+
+            return Row(
               children: [
-                Text(
-                  widget.targetUser.displayName,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                CircleAvatar(
+                  radius: 20,
+                  backgroundImage: user.photoUrl != null 
+                      ? NetworkImage(user.photoUrl!) 
+                      : null,
+                  child: user.photoUrl == null 
+                      ? const Icon(Icons.person, size: 20) 
+                      : null,
                 ),
-                const Text(
-                  'Online',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      user.displayName,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      statusText,
+                      style: TextStyle(
+                        color: isOnline ? Colors.green : Colors.grey,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
+            );
+          },
         ),
         actions: [
           PopupMenuButton<String>(
@@ -98,6 +126,35 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => ContactInfoScreen(user: widget.targetUser),
+                  ),
+                );
+              } else if (value == 'mute') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Conversation muted')),
+                );
+              } else if (value == 'block') {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Block User'),
+                    content: Text('Are you sure you want to block ${widget.targetUser.displayName}?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Close dialog
+                          Navigator.pop(context); // Go back to chat list
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('User blocked')),
+                          );
+                        },
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: const Text('Block'),
+                      ),
+                    ],
                   ),
                 );
               }
@@ -155,6 +212,12 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
                             showDateDivider = !currentDate.isAtSameMomentAs(nextDate);
                           }
 
+                          // Read Receipts Logic
+                          bool isRead = message.readBy.contains(widget.targetUser.id);
+                          // For messages I sent: check if target user has read it
+                          // For messages I received: check if I (current user) have read it
+                          bool isUnreadByMe = !isMe && !message.readBy.contains(currentUserId);
+                          
                           return Column(
                             children: [
                               if (showDateDivider) ...[
@@ -194,7 +257,14 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
                                         ),
                                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                         decoration: BoxDecoration(
-                                          color: isMe ? const Color(0xFF2196F3) : const Color(0xFFF0F0F0),
+                                          color: isMe 
+                                              ? const Color(0xFF2196F3) 
+                                              : (isUnreadByMe 
+                                                  ? const Color(0xFFE3F2FD) // Light blue for unread messages
+                                                  : const Color(0xFFF0F0F0)),
+                                          border: isUnreadByMe 
+                                              ? Border.all(color: const Color(0xFF2196F3), width: 1.5)
+                                              : null,
                                           borderRadius: BorderRadius.only(
                                             topLeft: const Radius.circular(16),
                                             topRight: const Radius.circular(16),
@@ -226,7 +296,11 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
                                                 ),
                                                 if (isMe) ...[
                                                   const SizedBox(width: 4),
-                                                  const Icon(Icons.done_all, size: 14, color: Colors.white70),
+                                                  Icon(
+                                                    Icons.done_all, 
+                                                    size: 14, 
+                                                    color: isRead ? Colors.blueAccent : Colors.white70
+                                                  ),
                                                 ],
                                               ],
                                             ),
@@ -336,6 +410,23 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
         ),
       ),
     );
+  }
+
+  String _formatLastSeen(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    } else {
+      return '${date.day}/${date.month}';
+    }
   }
 
   String _formatDate(DateTime date) {

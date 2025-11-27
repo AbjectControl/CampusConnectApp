@@ -25,8 +25,35 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (state == AppLifecycleState.resumed) {
+      userProvider.updateOnlineStatus(true);
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      userProvider.updateOnlineStatus(false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

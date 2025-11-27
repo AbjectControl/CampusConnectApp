@@ -84,6 +84,21 @@ class UserRepository implements IUserRepository {
         }
       }
 
+      // 🔹 Search by student ID (supports both exact and prefix match)
+      if (query.isNotEmpty) {
+        final studentIdSnap = await _firestore
+            .collection(_collection)
+            .where('studentId', isGreaterThanOrEqualTo: query)
+            .where('studentId', isLessThanOrEqualTo: '$query\uf8ff')
+            .get();
+
+        for (var doc in studentIdSnap.docs) {
+          if (!result.any((u) => u.id == doc.id)) {
+            result.add(User.fromJson(doc.data()));
+          }
+        }
+      }
+
       return result;
     } catch (e) {
       throw Exception('Failed to search users: $e');
@@ -93,5 +108,15 @@ class UserRepository implements IUserRepository {
   // ========== MENTORSHIP & ADMIN METHODS MOVED ==========
   // These methods have been moved to MentorshipRepository and AdminRepository
   // to adhere to SOLID principles (Single Responsibility Principle).
+
+  @override
+  Stream<User?> getUserStream(String userId) {
+    return _firestore.collection(_collection).doc(userId).snapshots().map((doc) {
+      if (doc.exists) {
+        return User.fromJson(doc.data()!);
+      }
+      return null;
+    });
+  }
 }
 

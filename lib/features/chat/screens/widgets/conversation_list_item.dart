@@ -129,9 +129,28 @@ class ConversationListItem extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          trailing: Text(
-            _formatTime(conversation['lastMessageTime']),
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                _formatTime(conversation['lastMessageTime']),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              if (_getUnreadCount(conversation) > 0)
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    "${_getUnreadCount(conversation)}",
+                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                ),
+            ],
           ),
           onTap: () {
             Navigator.push(
@@ -154,5 +173,11 @@ class ConversationListItem extends StatelessWidget {
       return "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
     }
     return "${date.day}/${date.month}";
+  }
+
+  int _getUnreadCount(Map<String, dynamic> conversation) {
+    final unreadCounts = conversation['unreadCounts'] as Map<String, dynamic>?;
+    if (unreadCounts == null) return 0;
+    return unreadCounts[chatProvider.currentUserId] ?? 0;
   }
 }

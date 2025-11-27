@@ -4,6 +4,8 @@ import 'package:cconnect/data/repositories/functions/FireBaseFunctions/chat_repo
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
 import 'package:cconnect/data/repositories/interfaces/ichat.dart';
 import 'package:cconnect/data/repositories/interfaces/igroup.dart';
+import 'package:cconnect/data/models/friendshipModel.dart';
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/friendship_repository.dart';
 import 'package:cconnect/utils/constraints/enums.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -39,6 +41,11 @@ class ChatProvider extends ChangeNotifier {
     await _chatRepository.sendMessage(message);
   }
 
+  Future<void> markRead(String conversationId, String messageId) async {
+    if (currentUserId == null) return;
+    await _chatRepository.markRead(conversationId, messageId, currentUserId!);
+  }
+
   Future<void> deleteMessage(String messageId) async {
     // Cast to concrete implementation if needed, or add to interface if common
     // For now, assuming ChatRepository has it or we add it to IChatRepository
@@ -67,11 +74,49 @@ class ChatProvider extends ChangeNotifier {
     final users = await UserRepository.instance.searchByNameOrEmail(query);
     yield users;
   }
+
+
+  
+  Future<List<dynamic>> searchGroups(String query) async {
+    if (query.isEmpty) return [];
+    return await _groupRepository.searchGroups(query);
+  }
+
+  // Friendship Methods
+  final FriendshipRepository _friendshipRepository = FriendshipRepository();
+
+  Future<void> sendFriendRequest(String recipientId) async {
+    if (currentUserId == null) return;
+    await _friendshipRepository.sendFriendRequest(currentUserId!, recipientId);
+  }
+
+  Future<void> acceptFriendRequest(String friendshipId) async {
+    await _friendshipRepository.acceptFriendRequest(friendshipId);
+  }
+
+  Future<void> rejectFriendRequest(String friendshipId) async {
+    await _friendshipRepository.rejectFriendRequest(friendshipId);
+  }
+
+  Future<void> unfriend(String otherUserId) async {
+    if (currentUserId != null) {
+      await _friendshipRepository.unfriend(currentUserId!, otherUserId);
+    }
+  }
+
+  Future<Friendship?> getFriendship(String otherUserId) async {
+    if (currentUserId == null) return null;
+    return await _friendshipRepository.getFriendship(currentUserId!, otherUserId);
+  }
   
   // This method is now less critical for the list view due to denormalization,
   // but still useful for other things.
   Future<User?> getUser(String userId) async {
     return UserRepository.instance.fetchUser(userId);
+  }
+
+  Stream<User?> getUserStream(String userId) {
+    return UserRepository.instance.getUserStream(userId);
   }
 
   Stream<List<Map<String, dynamic>>> getConversations() {

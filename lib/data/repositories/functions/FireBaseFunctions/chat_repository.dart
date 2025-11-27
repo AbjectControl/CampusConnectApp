@@ -48,14 +48,31 @@ class ChatRepository implements IChatRepository, IGroupRepository {
         'userData': userData, // Denormalized data
         'lastMessage': message.text,
         'lastMessageTime': message.sentAt.toIso8601String(),
-        'unreadCount': 1,
+        'unreadCounts': {
+          for (var id in participants) 
+            id: (id == message.senderId) ? 0 : 1
+        },
         'isGroup': false,
       });
     } else {
       // Update existing conversation
+      // Increment unread count for everyone except sender
+      final data = conversationDoc.data() as Map<String, dynamic>;
+      final unreadCounts = Map<String, dynamic>.from(data['unreadCounts'] ?? {});
+      
+      // Get participants to ensure we cover everyone
+      final participants = List<String>.from(data['participants'] ?? []);
+      
+      for (var id in participants) {
+        if (id != message.senderId) {
+          unreadCounts[id] = (unreadCounts[id] ?? 0) + 1;
+        }
+      }
+
       await conversationRef.update({
         'lastMessage': message.text,
         'lastMessageTime': message.sentAt.toIso8601String(),
+        'unreadCounts': unreadCounts,
       });
     }
   }
@@ -86,7 +103,24 @@ class ChatRepository implements IChatRepository, IGroupRepository {
 
   @override
   Future<void> markRead(String conversationId, String messageId, String userId) async {
-    // Implementation for marking read
+    // 1. Mark specific message as read
+    // Note: In a real app, we might batch this or only mark the latest message.
+    // Here we assume messageId is the latest one or we just update the conversation unread count.
+    
+    // Update conversation unread count for this user to 0
+    final conversationRef = _db.collection('conversations').doc(conversationId);
+    await conversationRef.update({
+      'unreadCounts.$userId': 0,
+    });
+    
+    // Also add user to readBy of the message (optional, for ticks)
+    // This requires knowing which messages are unread. 
+    // For simplicity, we might just update the 'readBy' of the passed messageId if provided.
+    if (messageId.isNotEmpty) {
+       await _db.collection('messages').doc(messageId).update({
+         'readBy': FieldValue.arrayUnion([userId])
+       });
+    }
   }
 
   @override
@@ -165,6 +199,22 @@ class ChatRepository implements IChatRepository, IGroupRepository {
       print("Error creating group: $e");
       rethrow;
     }
+  }
+
+  @override
+  Future<List<GroupCommunity>> searchGroups(String query) async {
+    if (query.isEmpty) return [];
+    
+    // Note: Firestore doesn't support native full-text search.
+    // We'll use a simple startAt/endAt query for prefix matching on 'name'.
+    // For production, use Algolia or ElasticSearch.
+    final snapshot = await _db
+        .collection('groups')
+        .where('name', isGreaterThanOrEqualTo: query)
+        .where('name', isLessThan: query + 'z')
+        .get();
+
+    return snapshot.docs.map((doc) => GroupCommunity.fromJson(doc.data())).toList();
   }
 
   // Helper methods (not part of interface but useful)

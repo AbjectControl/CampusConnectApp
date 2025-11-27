@@ -8,10 +8,16 @@ class User {
   String? photoUrl;
   String? about;
   DateTime? lastSeen;
+  bool isOnline;
   final UserRole role;
   final String? studentId; // e.g., l230989
   final String? phone;
-  Map<String, dynamic>? metadata; // e.g., department, semester, availability
+  String? department;
+  String? section;
+  Map<String, dynamic>? metadata; // e.g., semester, availability
+
+  String? pushToken;
+  DateTime? createdAt;
 
   User({
     required this.id,
@@ -20,10 +26,15 @@ class User {
     this.photoUrl,
     this.about,
     this.lastSeen,
+    this.isOnline = false,
     this.role = UserRole.student,
     this.studentId,
     this.phone,
+    this.department,
+    this.section,
     this.metadata,
+    this.pushToken,
+    this.createdAt,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
@@ -35,10 +46,17 @@ class User {
     lastSeen: json['lastSeen'] != null
         ? DateTime.parse(json['lastSeen'] as String)
         : null,
+    isOnline: json['isOnline'] as bool? ?? false,
     role: _roleFromString(json['role'] as String?),
     studentId: json['studentId'] as String?,
     phone: json['phone'] as String?,
+    department: json['department'] as String?,
+    section: json['section'] as String?,
     metadata: json['metadata'] as Map<String, dynamic>?,
+    pushToken: json['push_token'] as String?,
+    createdAt: json['created_at'] != null 
+        ? DateTime.parse(json['created_at'] as String)
+        : null,
   );
 
   Map<String, dynamic> toJson() => {
@@ -48,10 +66,15 @@ class User {
     'photoUrl': photoUrl,
     'about': about,
     'lastSeen': lastSeen?.toIso8601String(),
+    'isOnline': isOnline,
     'role': describeEnum(role),
     'studentId': studentId,
     'phone': phone,
+    'department': department,
+    'section': section,
     'metadata': metadata ?? {},
+    'push_token': pushToken,
+    'created_at': createdAt?.toIso8601String(),
   };
 
   static UserRole _roleFromString(String? s) {

@@ -30,4 +30,5 @@ class Friendship {
     'createdAt': createdAt.toIso8601String(),
     'accepted': accepted,
   };
+  String get status => accepted ? 'accepted' : 'pending';
 }

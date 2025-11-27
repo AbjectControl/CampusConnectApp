@@ -27,8 +27,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
-  final studentIdController = TextEditingController(); // Added studentId controller
+  final studentIdController = TextEditingController();
+  final departmentController = TextEditingController();
+  final sectionController = TextEditingController();
   final CloudinaryService _cloudinary = CloudinaryService();
+
+  String? _selectedDepartment; // Track dropdown selection separately
 
   // File? _selectedImage; // Removed File dependency for web support
   XFile? _selectedImage; // Use XFile instead
@@ -55,6 +59,15 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       
       if (user.studentId != null) {
         studentIdController.text = user.studentId!;
+      }
+
+      if (user.department != null && user.department!.isNotEmpty) {
+        _selectedDepartment = user.department;
+        departmentController.text = user.department!;
+      }
+
+      if (user.section != null) {
+        sectionController.text = user.section!;
       }
 
       _uploadedImageUrl = user.photoUrl;
@@ -108,9 +121,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           photoUrl: _uploadedImageUrl ?? currentUser.photoUrl,
           about: currentUser.about,
           lastSeen: currentUser.lastSeen,
+          isOnline: currentUser.isOnline,
           role: currentUser.role,
           studentId: studentIdController.text.trim(),
           phone: phoneController.text.trim(),
+          department: departmentController.text.trim(),
+          section: sectionController.text.trim(),
           metadata: currentUser.metadata,
         );
 
@@ -209,7 +225,49 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       controller: studentIdController,
                       labelText: "Student ID",
                       hintText: "e.g. l23XXXX",
-                      svgIcon: userIcon, // Using userIcon as placeholder
+                      svgIcon: userIcon,
+                      validator: (value) => value == null || value.isEmpty
+                          ? AppStrings.requiredField
+                          : null,
+                    ),
+                    Sizing.h16,
+                    DropdownButtonFormField<String>(
+                      value: _selectedDepartment,
+                      decoration: InputDecoration(
+                        labelText: "Department",
+                        hintText: "Select your department",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: "Computer Science", child: Text("Computer Science")),
+                        DropdownMenuItem(value: "Data Science", child: Text("Data Science")),
+                        DropdownMenuItem(value: "Artificial Intelligence", child: Text("Artificial Intelligence")),
+                        DropdownMenuItem(value: "Business", child: Text("Business")),
+                        DropdownMenuItem(value: "Civil Engineering", child: Text("Civil Engineering")),
+                        DropdownMenuItem(value: "Software Engineering", child: Text("Software Engineering")),
+                        DropdownMenuItem(value: "Electrical Engineering", child: Text("Electrical Engineering")),
+                        DropdownMenuItem(value: "Cyber Security", child: Text("Cyber Security")),
+                        DropdownMenuItem(value: "Fintech", child: Text("Fintech")),
+                      ],
+                      validator: (value) => value == null || value.isEmpty
+                          ? AppStrings.requiredField
+                          : null,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedDepartment = value;
+                          departmentController.text = value ?? '';
+                        });
+                      },
+                    ),
+                    Sizing.h16,
+                    CustomTextFormField(
+                      controller: sectionController,
+                      labelText: "Section",
+                      hintText: "e.g. A, B, C",
+                      svgIcon: userIcon,
                       validator: (value) => value == null || value.isEmpty
                           ? AppStrings.requiredField
                           : null,
@@ -220,8 +278,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       labelText: AppStrings.phoneLabel,
                       hintText: "03XX-XXXXXXX or +923XX-XXXXXXX",
                       keyboardType: TextInputType.phone,
-                      svgIcon: phoneIcon, // Assuming phoneIcon exists in appicons.dart, need to check
-                      // inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Removed to allow +
+                      svgIcon: phoneIcon,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return AppStrings.requiredField;
@@ -245,7 +302,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       ),
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(AppStrings.continueBtn), // Using continueBtn from strings
+                          : const Text(AppStrings.continueBtn),
                     ),
                   ],
                 ),

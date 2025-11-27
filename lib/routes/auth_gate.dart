@@ -54,12 +54,14 @@ class AuthGate extends StatelessWidget {
                 });
 
                 // Check for incomplete profile
-                // We check name, studentId, and phone (in metadata)
+                // We check name, studentId, phone, department, and section
                 // PhotoUrl is optional but user code checked it. I'll check it too as requested.
                 final isProfileIncomplete = appUser.displayName.isEmpty ||
                     (appUser.studentId == null || appUser.studentId!.isEmpty) ||
                     (appUser.phone == null || appUser.phone!.isEmpty) ||
-                    (appUser.photoUrl == null || appUser.photoUrl!.isEmpty);
+                    (appUser.photoUrl == null || appUser.photoUrl!.isEmpty) ||
+                    (appUser.department == null || appUser.department!.isEmpty) ||
+                    (appUser.section == null || appUser.section!.isEmpty);
 
                 if (isProfileIncomplete) {
                   return const CompleteProfileScreen();
