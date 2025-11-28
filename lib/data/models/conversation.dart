@@ -1,5 +1,3 @@
-import 'package:cconnect/data/models/message.dart';
-
 class Conversation {
   final String id;
   final List<String> participants; // User IDs

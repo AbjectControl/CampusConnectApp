@@ -10,7 +10,7 @@ class UserRepository implements IUserRepository {
   // Singleton instance removed for SOLID compliance (Dependency Injection)
   // static final UserRepository instance = UserRepository._();
   // UserRepository._();
-  
+
   UserRepository();
 
   @override
@@ -60,30 +60,73 @@ class UserRepository implements IUserRepository {
   @override
   Future<List<User>> searchByNameOrEmail(String query) async {
     try {
-      final q = query.toLowerCase();
+      if (query.trim().isEmpty) return [];
+      final q = query.trim();
       final result = <User>[];
+      final futures = <Future<QuerySnapshot<Map<String, dynamic>>>>[];
 
-      // 🔹 Search by displayName
-      final nameSnap = await _firestore
-          .collection(_collection)
-          .where('displayName', isGreaterThanOrEqualTo: q)
-          .where('displayName', isLessThanOrEqualTo: '$q\uf8ff')
-          .get();
-
-      for (var doc in nameSnap.docs) {
-        result.add(User.fromJson(doc.data()));
+      // Helper to add unique users
+      void addUsers(QuerySnapshot<Map<String, dynamic>> snap) {
+        for (var doc in snap.docs) {
+          if (!result.any((u) => u.id == doc.id)) {
+            result.add(User.fromJson(doc.data()));
+          }
+        }
       }
 
-      // 🔹 Search by email (exact match)
-      final emailSnap = await _firestore
-          .collection(_collection)
-          .where('email', isEqualTo: query)
-          .get();
+      // 1. Search by displayName (As-is) - Prefix
+      futures.add(
+        _firestore
+            .collection(_collection)
+            .where('displayName', isGreaterThanOrEqualTo: q)
+            .where('displayName', isLessThanOrEqualTo: '$q\uf8ff')
+            .get(),
+      );
 
-      for (var doc in emailSnap.docs) {
-        if (!result.any((u) => u.id == doc.id)) {
-          result.add(User.fromJson(doc.data()));
+      // 2. Search by displayName (Capitalized) - e.g. "ali" -> "Ali"
+      if (q.isNotEmpty) {
+        final capQuery = q[0].toUpperCase() + q.substring(1);
+        if (capQuery != q) {
+          futures.add(
+            _firestore
+                .collection(_collection)
+                .where('displayName', isGreaterThanOrEqualTo: capQuery)
+                .where('displayName', isLessThanOrEqualTo: '$capQuery\uf8ff')
+                .get(),
+          );
         }
+      }
+
+      // 3. Search by studentId (As-is) - Prefix
+      futures.add(
+        _firestore
+            .collection(_collection)
+            .where('studentId', isGreaterThanOrEqualTo: q)
+            .where('studentId', isLessThanOrEqualTo: '$q\uf8ff')
+            .get(),
+      );
+
+      // 4. Search by studentId (Uppercase) - e.g. "l23" -> "L23"
+      final upperQuery = q.toUpperCase();
+      if (upperQuery != q) {
+        futures.add(
+          _firestore
+              .collection(_collection)
+              .where('studentId', isGreaterThanOrEqualTo: upperQuery)
+              .where('studentId', isLessThanOrEqualTo: '$upperQuery\uf8ff')
+              .get(),
+        );
+      }
+
+      // 5. Search by email (Exact)
+      futures.add(
+        _firestore.collection(_collection).where('email', isEqualTo: q).get(),
+      );
+
+      // Execute all queries in parallel
+      final snapshots = await Future.wait(futures);
+      for (var snap in snapshots) {
+        addUsers(snap);
       }
 
       return result;
@@ -98,12 +141,25 @@ class UserRepository implements IUserRepository {
 
   @override
   Stream<User?> getUserStream(String userId) {
-    return _firestore.collection(_collection).doc(userId).snapshots().map((doc) {
+    return _firestore.collection(_collection).doc(userId).snapshots().map((
+      doc,
+    ) {
       if (doc.exists) {
         return User.fromJson(doc.data()!);
       }
       return null;
     });
   }
-}
 
+  @override
+  Future<void> updateUserFields(
+    String userId,
+    Map<String, dynamic> fields,
+  ) async {
+    try {
+      await _firestore.collection(_collection).doc(userId).update(fields);
+    } catch (e) {
+      throw Exception('Failed to update user fields: $e');
+    }
+  }
+}

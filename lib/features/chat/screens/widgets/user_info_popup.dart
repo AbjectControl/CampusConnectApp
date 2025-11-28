@@ -1,6 +1,7 @@
 import 'package:cconnect/data/models/friendshipModel.dart';
 import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/features/chat/controllers/chat_provider.dart';
+import 'package:cconnect/features/chat/screens/friends/friends_chat_screen.dart';
 import 'package:cconnect/utils/constraints/sizing.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -50,38 +51,59 @@ class _UserInfoPopupState extends State<UserInfoPopup> {
             children: [
               CircleAvatar(
                 radius: 40,
-                backgroundImage: widget.user.photoUrl != null ? NetworkImage(widget.user.photoUrl!) : null,
-                child: widget.user.photoUrl == null ? const Icon(Icons.person, size: 40) : null,
+                backgroundImage: widget.user.photoUrl != null
+                    ? NetworkImage(widget.user.photoUrl!)
+                    : null,
+                child: widget.user.photoUrl == null
+                    ? const Icon(Icons.person, size: 40)
+                    : null,
               ),
               Sizing.h16,
               Text(
                 widget.user.displayName,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               Sizing.h8,
               if (widget.user.studentId != null)
-                Text("ID: ${widget.user.studentId}", style: const TextStyle(color: Colors.grey)),
+                Text(
+                  "ID: ${widget.user.studentId}",
+                  style: const TextStyle(color: Colors.grey),
+                ),
               if (widget.user.department != null)
-                Text("Dept: ${widget.user.department}", style: const TextStyle(color: Colors.grey)),
+                Text(
+                  "Dept: ${widget.user.department}",
+                  style: const TextStyle(color: Colors.grey),
+                ),
               if (widget.user.section != null)
-                Text("Section: ${widget.user.section}", style: const TextStyle(color: Colors.grey)),
+                Text(
+                  "Section: ${widget.user.section}",
+                  style: const TextStyle(color: Colors.grey),
+                ),
               Sizing.h8,
-              Text(widget.user.email, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              
+              Text(
+                widget.user.email,
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+
               Sizing.h24,
               if (_isLoading)
                 const CircularProgressIndicator()
               else if (currentUserId != widget.user.id)
                 _buildActionButtons(context, chatProvider),
-                
+
               Sizing.h16,
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                   // Report logic
                 },
-                child: const Text("Report User", style: TextStyle(color: Colors.red)),
+                child: const Text(
+                  "Report User",
+                  style: TextStyle(color: Colors.red),
+                ),
               ),
             ],
           ),
@@ -96,7 +118,9 @@ class _UserInfoPopupState extends State<UserInfoPopup> {
         onPressed: () async {
           await chatProvider.sendFriendRequest(widget.user.id);
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Friend request sent")));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Friend request sent")),
+            );
             _checkFriendshipStatus();
           }
         },
@@ -104,7 +128,10 @@ class _UserInfoPopupState extends State<UserInfoPopup> {
       );
     } else if (!_friendship!.accepted) {
       if (_friendship!.requesterId == chatProvider.currentUserId) {
-        return const Text("Request Pending", style: TextStyle(color: Colors.orange));
+        return const Text(
+          "Request Pending",
+          style: TextStyle(color: Colors.orange),
+        );
       } else {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -128,18 +155,42 @@ class _UserInfoPopupState extends State<UserInfoPopup> {
         );
       }
     } else {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      return Column(
         children: [
-          const Text("Friends", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-          Sizing.w16,
-          OutlinedButton(
-            onPressed: () async {
-              await chatProvider.unfriend(_friendship!.id);
-              if (context.mounted) _checkFriendshipStatus();
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Friends",
+                style: TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Sizing.w16,
+              OutlinedButton(
+                onPressed: () async {
+                  await chatProvider.unfriend(_friendship!.id);
+                  if (context.mounted) _checkFriendshipStatus();
+                },
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text("Unfriend"),
+              ),
+            ],
+          ),
+          Sizing.h8,
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FriendsChatScreen(targetUser: widget.user),
+                ),
+              );
             },
-            style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text("Unfriend"),
+            icon: const Icon(Icons.message),
+            label: const Text("Message"),
           ),
         ],
       );

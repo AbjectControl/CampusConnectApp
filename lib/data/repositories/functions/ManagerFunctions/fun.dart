@@ -1,7 +1,7 @@
 import 'package:cconnect/data/models/AdminAction.dart';
 import 'package:cconnect/data/models/announcement.dart';
 import 'package:cconnect/data/models/discussionPost.dart';
-import 'package:cconnect/data/models/eventItem.dart';
+
 import 'package:cconnect/data/models/friendshipModel.dart';
 import 'package:cconnect/data/models/groupCommunity.dart';
 import 'package:cconnect/data/models/mentorProfile.dart';
@@ -23,6 +23,7 @@ import 'package:cconnect/data/repositories/interfaces/irecommendation.dart';
 import 'package:cconnect/data/repositories/interfaces/iresource.dart';
 import 'package:cconnect/data/repositories/interfaces/iuser.dart';
 import 'package:cconnect/utils/constraints/enums.dart';
+import 'package:cconnect/data/models/event.dart';
 
 class AuthManager {
   final IAuthRepository authRepo;
@@ -87,9 +88,8 @@ class ForumManager {
 class EventManager {
   final IEventRepository repo;
   EventManager({required this.repo});
-  Future<EventItem> createEvent(EventItem e) => repo.createEvent(e);
-  Future<void> joinEvent(String eventId, String userId) =>
-      repo.joinEvent(eventId, userId);
+  Future<void> createEvent(Event e) => repo.createEvent(e);
+  // Future<void> joinEvent(String eventId, String userId) => repo.joinEvent(eventId, userId);
 }
 
 class NetworkingManager {

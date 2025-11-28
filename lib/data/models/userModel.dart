@@ -66,6 +66,38 @@ class User {
     'metadata': metadata ?? {},
   };
 
+  User copyWith({
+    String? id,
+    String? displayName,
+    String? email,
+    String? photoUrl,
+    String? about,
+    DateTime? lastSeen,
+    bool? isOnline,
+    UserRole? role,
+    String? studentId,
+    String? phone,
+    String? department,
+    String? section,
+    Map<String, dynamic>? metadata,
+  }) {
+    return User(
+      id: id ?? this.id,
+      displayName: displayName ?? this.displayName,
+      email: email ?? this.email,
+      photoUrl: photoUrl ?? this.photoUrl,
+      about: about ?? this.about,
+      lastSeen: lastSeen ?? this.lastSeen,
+      isOnline: isOnline ?? this.isOnline,
+      role: role ?? this.role,
+      studentId: studentId ?? this.studentId,
+      phone: phone ?? this.phone,
+      department: department ?? this.department,
+      section: section ?? this.section,
+      metadata: metadata ?? this.metadata,
+    );
+  }
+
   static UserRole _roleFromString(String? s) {
     if (s == null) return UserRole.student;
     return UserRole.values.firstWhere(

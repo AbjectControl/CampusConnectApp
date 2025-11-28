@@ -22,28 +22,40 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // "only in the case of dark theme the app bar color should change as it is of now"
     // "custom app bar which will have balck text on white back ground" (implied for light mode)
-    
-    final Color effectiveBackgroundColor = backgroundColor ?? 
-        (isDark ? Theme.of(context).appBarTheme.backgroundColor : Colors.white) ?? 
+
+    final Color effectiveBackgroundColor =
+        backgroundColor ??
+        (isDark
+            ? Theme.of(context).appBarTheme.backgroundColor
+            : Colors.white) ??
         (isDark ? Colors.black : Colors.white);
-        
+
     final Color effectiveTextColor = isDark ? Colors.white : Colors.black;
 
     return AppBar(
       title: Text(
         title,
-        style: titleStyle?.copyWith(color: effectiveTextColor) ?? 
-               TextStyle(color: effectiveTextColor, fontWeight: FontWeight.bold),
+        style:
+            titleStyle?.copyWith(color: effectiveTextColor) ??
+            TextStyle(color: effectiveTextColor, fontWeight: FontWeight.bold),
       ),
       centerTitle: centerTitle,
       elevation: elevation,
       backgroundColor: effectiveBackgroundColor,
       actions: actions,
-      iconTheme: IconThemeData(color: effectiveTextColor), // Ensure back button/icons are visible
+      iconTheme: IconThemeData(
+        color: effectiveTextColor,
+      ), // Ensure back button/icons are visible
       systemOverlayStyle: SystemUiHelper.getOverlayStyle(context),
+      shape: Border(
+        bottom: BorderSide(
+          color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+          width: 1,
+        ),
+      ),
     );
   }
 

@@ -8,13 +8,8 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      appBar: CustomAppBar(
-        title: AppStrings.home,
-        centerTitle: true,
-      ),
-      body: Center(
-        child: Text("Home Screen"),
-      ),
+      appBar: CustomAppBar(title: AppStrings.home, centerTitle: true),
+      body: Center(child: Text("Home Screen")),
     );
   }
 }

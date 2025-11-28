@@ -1,4 +1,6 @@
+import 'package:cconnect/common/widgets/appbar/custom_appbar.dart';
 import 'package:cconnect/routes/routes.dart';
+import 'package:cconnect/utils/constraints/strings.dart';
 import 'package:flutter/material.dart';
 
 class AcademicsScreen extends StatelessWidget {
@@ -7,7 +9,7 @@ class AcademicsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Academics')),
+      appBar: CustomAppBar(title: AppStrings.academics, centerTitle: true),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

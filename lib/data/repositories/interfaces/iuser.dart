@@ -7,4 +7,5 @@ abstract class IUserRepository {
   Future<void> update(User user);
   Future<List<User>> searchByNameOrEmail(String query);
   Stream<User?> getUserStream(String userId);
+  Future<void> updateUserFields(String userId, Map<String, dynamic> fields);
 }

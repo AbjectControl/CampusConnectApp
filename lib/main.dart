@@ -18,6 +18,15 @@ import 'package:cconnect/data/repositories/interfaces/ichat.dart';
 import 'package:cconnect/data/repositories/interfaces/ifriendship.dart';
 import 'package:cconnect/data/repositories/interfaces/igroup.dart';
 import 'package:cconnect/data/repositories/interfaces/iuser.dart';
+import 'package:cconnect/data/repositories/interfaces/ilost_found.dart';
+import 'package:cconnect/data/repositories/interfaces/isurvey.dart';
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/lost_found_repository.dart';
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/survey_repository.dart';
+import 'package:cconnect/features/community/controllers/lost_found_provider.dart';
+import 'package:cconnect/features/community/controllers/survey_provider.dart';
+import 'package:cconnect/data/repositories/interfaces/ievent.dart';
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/event_repository.dart';
+import 'package:cconnect/features/community/controllers/event_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +53,22 @@ void main() async {
             friendshipRepository: FriendshipRepository(),
             userRepository: UserRepository(),
           ),
+        ),
+        Provider<ILostFoundRepository>(create: (_) => LostFoundRepository()),
+        ChangeNotifierProvider(
+          create: (context) => LostFoundProvider(
+            repository: context.read<ILostFoundRepository>(),
+          ),
+        ),
+        Provider<ISurveyRepository>(create: (_) => SurveyRepository()),
+        ChangeNotifierProvider(
+          create: (context) =>
+              SurveyProvider(repository: context.read<ISurveyRepository>()),
+        ),
+        Provider<IEventRepository>(create: (_) => EventRepository()),
+        ChangeNotifierProvider(
+          create: (context) =>
+              EventProvider(repository: context.read<IEventRepository>()),
         ),
       ],
       child: MyApp(),

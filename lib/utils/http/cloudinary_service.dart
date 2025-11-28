@@ -34,17 +34,13 @@ class CloudinaryService {
         'https://api.cloudinary.com/v1_1/dhqh40nyz/image/upload',
       );
       final request = http.MultipartRequest('POST', url);
-      
+
       request.fields['upload_preset'] = 'flutteruploads';
-      
+
       // Use fromBytes for web compatibility
       final bytes = await imageFile!.readAsBytes();
       request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          bytes,
-          filename: imageFile!.name,
-        ),
+        http.MultipartFile.fromBytes('file', bytes, filename: imageFile!.name),
       );
 
       final response = await request.send();
@@ -59,8 +55,12 @@ class CloudinaryService {
       } else {
         final responseData = await response.stream.toBytes();
         final responseString = String.fromCharCodes(responseData);
-        print("Cloudinary Upload Failed: ${response.statusCode} - $responseString");
-        onError('Upload failed with status: ${response.statusCode} - $responseString');
+        print(
+          "Cloudinary Upload Failed: ${response.statusCode} - $responseString",
+        );
+        onError(
+          'Upload failed with status: ${response.statusCode} - $responseString',
+        );
         return null;
       }
     } catch (e) {
@@ -100,6 +100,48 @@ class CloudinaryService {
         return jsonMap['secure_url'] ?? jsonMap['url'];
       } else {
         onError('Upload failed with status: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      onError('Upload failed: $e');
+      return null;
+    } finally {
+      isUploading = false;
+      onUploadingChanged(false);
+    }
+  }
+
+  /// Uploads an image from a file path directly (for repository usage)
+  Future<String?> uploadImageFromPath(
+    String imagePath,
+    Function(bool) onUploadingChanged,
+    Function(String) onError,
+  ) async {
+    isUploading = true;
+    onUploadingChanged(true);
+
+    try {
+      final url = Uri.parse(
+        'https://api.cloudinary.com/v1_1/dhqh40nyz/image/upload',
+      );
+      final request = http.MultipartRequest('POST', url)
+        ..fields['upload_preset'] = 'flutteruploads'
+        ..files.add(await http.MultipartFile.fromPath('file', imagePath));
+
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseData = await response.stream.toBytes();
+        final responseString = String.fromCharCodes(responseData);
+        final jsonMap = jsonDecode(responseString);
+
+        return jsonMap['secure_url'] ?? jsonMap['url'];
+      } else {
+        final responseData = await response.stream.toBytes();
+        final responseString = String.fromCharCodes(responseData);
+        onError(
+          'Upload failed with status: ${response.statusCode} - $responseString',
+        );
         return null;
       }
     } catch (e) {

@@ -1,4 +1,4 @@
-import 'package:cconnect/data/models/conversation.dart';
+import 'package:cconnect/common/widgets/appbar/custom_appbar.dart';
 import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/features/chat/controllers/chat_provider.dart';
 import 'package:cconnect/features/chat/screens/groups/create_group_screen.dart';
@@ -7,11 +7,10 @@ import 'package:cconnect/features/chat/screens/widgets/conversation_list_item.da
 import 'package:cconnect/features/chat/screens/widgets/group_info_popup.dart';
 import 'package:cconnect/features/chat/screens/widgets/user_search_item.dart';
 import 'package:cconnect/features/personalization/controllers/userProvider.dart';
-import 'package:cconnect/utils/constraints/appicons.dart';
+import 'package:cconnect/utils/constraints/enums.dart';
 import 'package:cconnect/utils/constraints/sizing.dart';
 import 'package:cconnect/utils/constraints/strings.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -38,12 +37,14 @@ class _ChatScreenState extends State<ChatScreen> {
     final chatProvider = Provider.of<ChatProvider>(context);
     final currentUser = Provider.of<UserProvider>(context).user;
 
-    if (currentUser == null) return const Center(child: CircularProgressIndicator());
+    if (currentUser == null)
+      return const Center(child: CircularProgressIndicator());
     if (chatProvider.currentUserId == null) {
       chatProvider.setCurrentUser(currentUser.id);
     }
 
     return Scaffold(
+      appBar: CustomAppBar(title: AppStrings.chat, centerTitle: true),
       body: SafeArea(
         child: Column(
           children: [
@@ -86,15 +87,20 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
-          );
-        },
-        child: const Icon(Icons.group_add),
-      ),
+      floatingActionButton:
+          (currentUser.role == UserRole.admin ||
+              currentUser.role == UserRole.manager ||
+              currentUser.role == UserRole.mentor)
+          ? FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
+                );
+              },
+              child: const Icon(Icons.group_add),
+            )
+          : null,
     );
   }
 
@@ -136,7 +142,7 @@ class _ChatScreenState extends State<ChatScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         final groups = snapshot.data?[0] as List<dynamic>? ?? [];
         final users = snapshot.data?[1] as List<User>? ?? [];
 
@@ -150,46 +156,52 @@ class _ChatScreenState extends State<ChatScreen> {
               const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.all(8.0),
-                  child: Text("Groups", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                  child: Text(
+                    "Groups",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
                 ),
               ),
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final group = groups[index] as GroupCommunity;
-                    return ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.group)),
-                      title: Text(group.name),
-                      subtitle: Text("${group.members.length} members"),
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => GroupInfoPopup(group: group),
-                        );
-                      },
-                    );
-                  },
-                  childCount: groups.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final group = groups[index] as GroupCommunity;
+                  return ListTile(
+                    leading: const CircleAvatar(child: Icon(Icons.group)),
+                    title: Text(group.name),
+                    subtitle: Text("${group.members.length} members"),
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => GroupInfoPopup(group: group),
+                      );
+                    },
+                  );
+                }, childCount: groups.length),
               ),
             ],
             if (users.isNotEmpty) ...[
               const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.all(8.0),
-                  child: Text("People", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                  child: Text(
+                    "People",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
                 ),
               ),
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return UserSearchItem(
-                      user: users[index],
-                      chatProvider: chatProvider,
-                    );
-                  },
-                  childCount: users.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  return UserSearchItem(
+                    user: users[index],
+                    chatProvider: chatProvider,
+                  );
+                }, childCount: users.length),
               ),
             ],
           ],

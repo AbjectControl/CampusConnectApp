@@ -29,7 +29,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
   final studentIdController = TextEditingController();
-  final departmentController = TextEditingController(); // Added department controller
+  final departmentController =
+      TextEditingController(); // Added department controller
   final sectionController = TextEditingController(); // Added section controller
   final CloudinaryService _cloudinary = CloudinaryService();
 
@@ -45,17 +46,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     super.initState();
     _loadUserData();
   }
-  
+
   Future<void> _loadUserData() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final user = widget.user ?? userProvider.user;
     if (user != null) {
       nameController.text = user.displayName;
-      
+
       if (user.phone != null) {
-         phoneController.text = user.phone!;
+        phoneController.text = user.phone!;
       }
-      
+
       if (user.studentId != null) {
         studentIdController.text = user.studentId!;
       }
@@ -110,26 +111,32 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.user;
-      
+
       if (currentUser != null) {
-        final updatedUser = model.User(
-          id: currentUser.id,
-          displayName: nameController.text.trim(),
-          email: currentUser.email,
-          photoUrl: _uploadedImageUrl ?? currentUser.photoUrl,
-          about: currentUser.about,
-          lastSeen: currentUser.lastSeen,
-          isOnline: currentUser.isOnline,
-          role: currentUser.role,
-          studentId: studentIdController.text.trim(),
-          phone: phoneController.text.trim(),
-          department: departmentController.text.trim(),
-          section: sectionController.text.trim(),
-          metadata: currentUser.metadata,
+        final updates = {
+          'displayName': nameController.text.trim(),
+          'photoUrl': _uploadedImageUrl ?? currentUser.photoUrl,
+          'studentId': studentIdController.text.trim(),
+          'phone': phoneController.text.trim(),
+          'department': departmentController.text.trim(),
+          'section': sectionController.text.trim(),
+        };
+
+        final userRepository = Provider.of<IUserRepository>(
+          context,
+          listen: false,
+        );
+        await userRepository.updateUserFields(currentUser.id, updates);
+
+        final updatedUser = currentUser.copyWith(
+          displayName: updates['displayName'],
+          photoUrl: updates['photoUrl'],
+          studentId: updates['studentId'],
+          phone: updates['phone'],
+          department: updates['department'],
+          section: updates['section'],
         );
 
-        final userRepository = Provider.of<IUserRepository>(context, listen: false);
-        await userRepository.update(updatedUser);
         userProvider.setUser(updatedUser);
 
         SnackbarService.success("Profile updated successfully");
@@ -154,7 +161,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     ImageProvider? imageProvider;
     if (_selectedImage != null) {
       if (kIsWeb) {
-        imageProvider = NetworkImage(_selectedImage!.path); // On web, path is a blob URL
+        imageProvider = NetworkImage(
+          _selectedImage!.path,
+        ); // On web, path is a blob URL
       } else {
         imageProvider = FileImage(File(_selectedImage!.path));
       }
@@ -255,7 +264,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       labelText: AppStrings.phoneLabel,
                       hintText: "03XX-XXXXXXX or +923XX-XXXXXXX",
                       keyboardType: TextInputType.phone,
-                      svgIcon: phoneIcon, // Assuming phoneIcon exists in appicons.dart, need to check
+                      svgIcon:
+                          phoneIcon, // Assuming phoneIcon exists in appicons.dart, need to check
                       // inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Removed to allow +
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -280,7 +290,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       ),
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(AppStrings.continueBtn), // Using continueBtn from strings
+                          : const Text(
+                              AppStrings.continueBtn,
+                            ), // Using continueBtn from strings
                     ),
                   ],
                 ),

@@ -1,8 +1,9 @@
-import 'package:cconnect/data/models/eventItem.dart';
+import 'package:cconnect/data/models/event.dart';
 
 abstract class IEventRepository {
-  Future<EventItem> createEvent(EventItem event);
-  Future<List<EventItem>> listUpcomingForUser(String userId);
-  Future<void> joinEvent(String eventId, String userId);
-  Future<void> cancelEvent(String eventId);
+  Future<void> createEvent(Event event);
+  Stream<List<Event>> getActiveEvents();
+  Future<void> deleteEvent(String id);
+  Future<String?> uploadImage(String imagePath);
+  Future<void> deleteExpiredEvents();
 }

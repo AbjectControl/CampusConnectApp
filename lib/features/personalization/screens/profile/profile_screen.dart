@@ -83,7 +83,7 @@ class ProfileScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withOpacity(0.45),
                     blurRadius: 10,
                     offset: const Offset(0, 5),
                   ),
@@ -111,6 +111,49 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.phone_outlined,
                     label: AppStrings.phoneNumber,
                     value: user.phone ?? AppStrings.notProvided,
+                  ),
+                ],
+              ),
+            ),
+
+            Sizing.h8,
+
+            //academic details
+            Container(
+              padding: Sizing.paddingAll16,
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.45),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppStrings.academicDetails,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Sizing.h16,
+                  _buildDetailRow(
+                    context,
+                    icon: Icons.school_outlined,
+                    label: AppStrings.department,
+                    value: user.department ?? AppStrings.notProvided,
+                  ),
+                  const Divider(height: 32),
+                  _buildDetailRow(
+                    context,
+                    icon: Icons.class_outlined,
+                    label: AppStrings.section,
+                    value: user.section ?? AppStrings.notProvided,
                   ),
                 ],
               ),
