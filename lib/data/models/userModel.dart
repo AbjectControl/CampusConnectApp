@@ -16,9 +16,6 @@ class User {
   String? section;
   Map<String, dynamic>? metadata; // e.g., semester, availability
 
-  String? pushToken;
-  DateTime? createdAt;
-
   User({
     required this.id,
     required this.displayName,
@@ -33,8 +30,6 @@ class User {
     this.department,
     this.section,
     this.metadata,
-    this.pushToken,
-    this.createdAt,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
@@ -53,10 +48,6 @@ class User {
     department: json['department'] as String?,
     section: json['section'] as String?,
     metadata: json['metadata'] as Map<String, dynamic>?,
-    pushToken: json['push_token'] as String?,
-    createdAt: json['created_at'] != null 
-        ? DateTime.parse(json['created_at'] as String)
-        : null,
   );
 
   Map<String, dynamic> toJson() => {
@@ -73,8 +64,6 @@ class User {
     'department': department,
     'section': section,
     'metadata': metadata ?? {},
-    'push_token': pushToken,
-    'created_at': createdAt?.toIso8601String(),
   };
 
   static UserRole _roleFromString(String? s) {

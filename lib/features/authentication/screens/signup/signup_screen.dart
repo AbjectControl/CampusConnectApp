@@ -1,6 +1,6 @@
 import 'package:cconnect/common/widgets/loaders/fullscreen_loader.dart';
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/authentication.dart';
-import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
+import 'package:cconnect/data/repositories/interfaces/iuser.dart';
 import 'package:cconnect/features/authentication/controllers/signup/signup_controller.dart';
 import 'package:cconnect/features/authentication/screens/signup/widgets/already_have_account_text.dart';
 import 'package:cconnect/features/authentication/screens/signup/widgets/signup_form.dart';
@@ -14,9 +14,9 @@ class SignUpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => SignUpController(
+      create: (context) => SignUpController(
         authRepo: FirebaseAuthRepository(),
-        userRepo: UserRepository.instance,
+        userRepo: Provider.of<IUserRepository>(context, listen: false),
       ),
       child: Consumer<SignUpController>(
         builder: (context, controller, _) {

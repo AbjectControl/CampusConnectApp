@@ -1,7 +1,6 @@
 import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/features/chat/controllers/chat_provider.dart';
-import 'package:cconnect/features/chat/screens/friends/friends_chat_screen.dart';
-import 'package:cconnect/features/chat/screens/groups/group_chat_screen.dart';
+import 'package:cconnect/routes/routes.dart';
 import 'package:flutter/material.dart';
 
 class ConversationListItem extends StatelessWidget {
@@ -27,9 +26,7 @@ class ConversationListItem extends StatelessWidget {
 
   Widget _buildGroupTile(BuildContext context) {
     return ListTile(
-      leading: const CircleAvatar(
-        child: Icon(Icons.group),
-      ),
+      leading: const CircleAvatar(child: Icon(Icons.group)),
       title: Text(
         conversation['name'] ?? 'Group',
         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -44,14 +41,13 @@ class ConversationListItem extends StatelessWidget {
         style: const TextStyle(fontSize: 12, color: Colors.grey),
       ),
       onTap: () {
-        Navigator.push(
+        Navigator.pushNamed(
           context,
-          MaterialPageRoute(
-            builder: (_) => GroupChatScreen(
-              groupId: conversation['id'],
-              groupName: conversation['name'] ?? 'Group',
-            ),
-          ),
+          AppRoutes.groupChat,
+          arguments: {
+            'groupId': conversation['id'],
+            'groupName': conversation['name'] ?? 'Group',
+          },
         );
       },
     );
@@ -97,11 +93,10 @@ class ConversationListItem extends StatelessWidget {
           // Or we can construct a partial User object.
           final user = await chatProvider.getUser(otherUserId);
           if (context.mounted && user != null) {
-            Navigator.push(
+            Navigator.pushNamed(
               context,
-              MaterialPageRoute(
-                builder: (_) => FriendsChatScreen(targetUser: user),
-              ),
+              AppRoutes.friendsChat,
+              arguments: user,
             );
           }
         },
@@ -117,7 +112,9 @@ class ConversationListItem extends StatelessWidget {
 
         return ListTile(
           leading: CircleAvatar(
-            backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
+            backgroundImage: user.photoUrl != null
+                ? NetworkImage(user.photoUrl!)
+                : null,
             child: user.photoUrl == null ? const Icon(Icons.person) : null,
           ),
           title: Text(
@@ -153,11 +150,10 @@ class ConversationListItem extends StatelessWidget {
             ],
           ),
           onTap: () {
-            Navigator.push(
+            Navigator.pushNamed(
               context,
-              MaterialPageRoute(
-                builder: (_) => FriendsChatScreen(targetUser: user),
-              ),
+              AppRoutes.friendsChat,
+              arguments: user,
             );
           },
         );
@@ -169,7 +165,9 @@ class ConversationListItem extends StatelessWidget {
     if (isoString == null) return '';
     final date = DateTime.parse(isoString);
     final now = DateTime.now();
-    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day) {
       return "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
     }
     return "${date.day}/${date.month}";

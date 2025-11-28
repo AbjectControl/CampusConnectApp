@@ -1,6 +1,4 @@
-import 'package:cconnect/common/widgets/appbar/custom_appbar.dart';
-import 'package:cconnect/utils/constraints/strings.dart';
-import 'package:cconnect/features/academics/screens/mentorship_request_screen.dart';
+import 'package:cconnect/routes/routes.dart';
 import 'package:flutter/material.dart';
 
 class AcademicsScreen extends StatelessWidget {
@@ -9,9 +7,7 @@ class AcademicsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Academics'),
-      ),
+      appBar: AppBar(title: const Text('Academics')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -20,15 +16,15 @@ class AcademicsScreen extends StatelessWidget {
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const MentorshipRequestScreen()),
-                );
+                Navigator.pushNamed(context, AppRoutes.mentorshipRequest);
               },
               icon: const Icon(Icons.school),
               label: const Text('Request Mentorship'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
           ],

@@ -135,7 +135,7 @@ class _UserInfoPopupState extends State<UserInfoPopup> {
           Sizing.w16,
           OutlinedButton(
             onPressed: () async {
-              await chatProvider.unfriend(widget.user.id);
+              await chatProvider.unfriend(_friendship!.id);
               if (context.mounted) _checkFriendshipStatus();
             },
             style: OutlinedButton.styleFrom(foregroundColor: Colors.red),

@@ -40,7 +40,7 @@ class ChatController extends ChangeNotifier {
       yield [];
       return;
     }
-    final users = await UserRepository.instance.searchByNameOrEmail(query);
+    final users = await UserRepository().searchByNameOrEmail(query);
     yield users;
   }
   

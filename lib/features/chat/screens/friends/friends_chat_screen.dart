@@ -1,10 +1,10 @@
 import 'package:cconnect/common/widgets/appbar/custom_appbar.dart';
 import 'package:cconnect/data/models/message.dart';
+import 'package:cconnect/routes/routes.dart';
 import 'package:flutter/services.dart';
 import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/features/chat/controllers/chat_controller.dart';
 import 'package:cconnect/features/chat/controllers/chat_provider.dart';
-import 'package:cconnect/features/chat/screens/contact_info/contact_info_screen.dart';
 import 'package:cconnect/features/personalization/controllers/userProvider.dart';
 import 'package:cconnect/utils/constraints/sizing.dart';
 import 'package:cconnect/utils/constraints/strings.dart';
@@ -24,36 +24,57 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   late String _conversationId;
 
+  bool _showUnreadBadge = false;
+  int _unreadCount = 0;
+
   @override
   void initState() {
     super.initState();
     final currentUser = Provider.of<UserProvider>(context, listen: false).user!;
     final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-    
+
     // Initialize provider with current user if not set
     if (chatProvider.currentUserId == null) {
       chatProvider.setCurrentUser(currentUser.id);
     }
-    
+
     _conversationId = chatProvider.getConversationId(widget.targetUser.id);
-    
-    // Mark as read after a delay to allow user to see unread messages
+
+    // Mark as read and show badge
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Delay marking as read by 2 seconds so user can see highlighted messages
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          chatProvider.markRead(_conversationId, ''); // Mark conversation as read
-        }
-      });
+      _checkUnreadMessages();
+      // Mark conversation as read for the current user.
+      chatProvider.markMessagesAsRead(_conversationId);
     });
   }
 
-
+  void _checkUnreadMessages() {
+    // show a temporary unread badge (simple UX as requested)
+    setState(() {
+      _showUnreadBadge = true;
+    });
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _showUnreadBadge = false;
+        });
+      }
+    });
+  }
 
   void _sendMessage() {
     if (_messageController.text.trim().isEmpty) return;
-    Provider.of<ChatProvider>(context, listen: false).sendMessage(_conversationId, _messageController.text);
+    Provider.of<ChatProvider>(
+      context,
+      listen: false,
+    ).sendMessage(_conversationId, _messageController.text);
     _messageController.clear();
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -67,7 +88,10 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: StreamBuilder<User?>(
-          stream: Provider.of<ChatProvider>(context, listen: false).getUserStream(widget.targetUser.id),
+          stream: Provider.of<ChatProvider>(
+            context,
+            listen: false,
+          ).getUserStream(widget.targetUser.id),
           builder: (context, snapshot) {
             final user = snapshot.data ?? widget.targetUser;
             final isOnline = user.isOnline;
@@ -84,11 +108,11 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundImage: user.photoUrl != null 
-                      ? NetworkImage(user.photoUrl!) 
+                  backgroundImage: user.photoUrl != null
+                      ? NetworkImage(user.photoUrl!)
                       : null,
-                  child: user.photoUrl == null 
-                      ? const Icon(Icons.person, size: 20) 
+                  child: user.photoUrl == null
+                      ? const Icon(Icons.person, size: 20)
                       : null,
                 ),
                 const SizedBox(width: 12),
@@ -122,40 +146,10 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
             icon: const Icon(Icons.more_vert, color: Colors.black),
             onSelected: (value) {
               if (value == 'info') {
-                Navigator.push(
+                Navigator.pushNamed(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => ContactInfoScreen(user: widget.targetUser),
-                  ),
-                );
-              } else if (value == 'mute') {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Conversation muted')),
-                );
-              } else if (value == 'block') {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Block User'),
-                    content: Text('Are you sure you want to block ${widget.targetUser.displayName}?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context); // Close dialog
-                          Navigator.pop(context); // Go back to chat list
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('User blocked')),
-                          );
-                        },
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
-                        child: const Text('Block'),
-                      ),
-                    ],
-                  ),
+                  AppRoutes.contactInfo,
+                  arguments: widget.targetUser,
                 );
               }
             },
@@ -171,6 +165,29 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
         color: const Color(0xFFF5F5F5),
         child: Column(
           children: [
+            if (_showUnreadBadge)
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Text(
+                  "Unread Messages",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             Expanded(
               child: Consumer<ChatProvider>(
                 builder: (context, chatProvider, child) {
@@ -188,59 +205,87 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
                       }
 
                       final messages = snapshot.data!;
+
+                      // Mark messages as read - repository will handle idempotency
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        chatProvider.markMessagesAsRead(_conversationId);
+                      });
+
                       return ListView.builder(
                         reverse: true,
                         itemCount: messages.length,
                         padding: Sizing.paddingAll16,
                         itemBuilder: (context, index) {
                           final message = messages[index];
-                          // Always get current user from UserProvider to ensure accuracy
-                          final currentUserId = Provider.of<UserProvider>(context, listen: false).user?.id;
+                          final currentUserId = Provider.of<UserProvider>(
+                            context,
+                            listen: false,
+                          ).user?.id;
                           final isMe = message.senderId == currentUserId;
-                          
-                          final bool isFirstInSequence = index == messages.length - 1 || 
+
+                          final bool isFirstInSequence =
+                              index == messages.length - 1 ||
                               messages[index + 1].senderId != message.senderId;
-                          final bool isLastInSequence = index == 0 || 
+                          final bool isLastInSequence =
+                              index == 0 ||
                               messages[index - 1].senderId != message.senderId;
 
                           bool showDateDivider = false;
                           if (index == messages.length - 1) {
                             showDateDivider = true;
                           } else {
-                            final currentDate = DateTime(message.sentAt.year, message.sentAt.month, message.sentAt.day);
-                            final nextDate = DateTime(messages[index + 1].sentAt.year, messages[index + 1].sentAt.month, messages[index + 1].sentAt.day);
-                            showDateDivider = !currentDate.isAtSameMomentAs(nextDate);
+                            final currentDate = DateTime(
+                              message.sentAt.year,
+                              message.sentAt.month,
+                              message.sentAt.day,
+                            );
+                            final nextDate = DateTime(
+                              messages[index + 1].sentAt.year,
+                              messages[index + 1].sentAt.month,
+                              messages[index + 1].sentAt.day,
+                            );
+                            showDateDivider = !currentDate.isAtSameMomentAs(
+                              nextDate,
+                            );
                           }
 
-                          // Read Receipts Logic
-                          bool isRead = message.readBy.contains(widget.targetUser.id);
-                          // For messages I sent: check if target user has read it
-                          // For messages I received: check if I (current user) have read it
-                          bool isUnreadByMe = !isMe && !message.readBy.contains(currentUserId);
-                          
+                          bool isRead = message.readBy.contains(
+                            widget.targetUser.id,
+                          );
+
                           return Column(
                             children: [
                               if (showDateDivider) ...[
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                   child: Text(
                                     _formatDate(message.sentAt),
-                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ),
                               ],
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                                mainAxisAlignment: isMe
+                                    ? MainAxisAlignment.end
+                                    : MainAxisAlignment.start,
                                 children: [
                                   if (!isMe && isLastInSequence) ...[
                                     CircleAvatar(
                                       radius: 16,
-                                      backgroundImage: widget.targetUser.photoUrl != null 
-                                          ? NetworkImage(widget.targetUser.photoUrl!) 
+                                      backgroundImage:
+                                          widget.targetUser.photoUrl != null
+                                          ? NetworkImage(
+                                              widget.targetUser.photoUrl!,
+                                            )
                                           : null,
-                                      child: widget.targetUser.photoUrl == null 
-                                          ? const Icon(Icons.person, size: 16) 
+                                      child: widget.targetUser.photoUrl == null
+                                          ? const Icon(Icons.person, size: 16)
                                           : null,
                                     ),
                                     const SizedBox(width: 8),
@@ -249,37 +294,54 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
                                   ],
                                   Flexible(
                                     child: GestureDetector(
-                                      onLongPress: () => _showMessageOptions(context, message, isMe),
+                                      onLongPress: () => _showMessageOptions(
+                                        context,
+                                        message,
+                                        isMe,
+                                      ),
                                       child: Container(
                                         margin: EdgeInsets.only(
                                           top: isFirstInSequence ? 4 : 2,
                                           bottom: isLastInSequence ? 4 : 2,
                                         ),
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 12,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: isMe 
-                                              ? const Color(0xFF2196F3) 
-                                              : (isUnreadByMe 
-                                                  ? const Color(0xFFE3F2FD) // Light blue for unread messages
-                                                  : const Color(0xFFF0F0F0)),
-                                          border: isUnreadByMe 
-                                              ? Border.all(color: const Color(0xFF2196F3), width: 1.5)
-                                              : null,
+                                          color: isMe
+                                              ? const Color(0xFF2196F3)
+                                              : const Color(0xFFF0F0F0),
                                           borderRadius: BorderRadius.only(
                                             topLeft: const Radius.circular(16),
                                             topRight: const Radius.circular(16),
-                                            bottomLeft: isMe ? const Radius.circular(16) : (isLastInSequence ? const Radius.circular(4) : const Radius.circular(16)),
-                                            bottomRight: isMe ? (isLastInSequence ? const Radius.circular(4) : const Radius.circular(16)) : const Radius.circular(16),
+                                            bottomLeft: isMe
+                                                ? const Radius.circular(16)
+                                                : (isLastInSequence
+                                                      ? const Radius.circular(4)
+                                                      : const Radius.circular(
+                                                          16,
+                                                        )),
+                                            bottomRight: isMe
+                                                ? (isLastInSequence
+                                                      ? const Radius.circular(4)
+                                                      : const Radius.circular(
+                                                          16,
+                                                        ))
+                                                : const Radius.circular(16),
                                           ),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text(
                                               message.text,
                                               style: TextStyle(
-                                                color: isMe ? Colors.white : Colors.black87,
+                                                color: isMe
+                                                    ? Colors.white
+                                                    : Colors.black87,
                                                 fontSize: 16,
                                               ),
                                             ),
@@ -290,16 +352,20 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
                                                 Text(
                                                   _formatTime(message.sentAt),
                                                   style: TextStyle(
-                                                    color: isMe ? Colors.white70 : Colors.grey,
+                                                    color: isMe
+                                                        ? Colors.white70
+                                                        : Colors.grey,
                                                     fontSize: 11,
                                                   ),
                                                 ),
                                                 if (isMe) ...[
                                                   const SizedBox(width: 4),
                                                   Icon(
-                                                    Icons.done_all, 
-                                                    size: 14, 
-                                                    color: isRead ? Colors.blueAccent : Colors.white70
+                                                    Icons.done_all,
+                                                    size: 14,
+                                                    color: isRead
+                                                        ? Colors.blueAccent
+                                                        : Colors.white70,
                                                   ),
                                                 ],
                                               ],
@@ -333,7 +399,9 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -352,7 +420,12 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
   }
 
   String _formatTime(DateTime date) {
-    return "${date.hour > 12 ? date.hour - 12 : date.hour}:${date.minute.toString().padLeft(2, '0')} ${date.hour >= 12 ? 'PM' : 'AM'}";
+    final hour = date.hour == 0
+        ? 12
+        : (date.hour > 12 ? date.hour - 12 : date.hour);
+    final minute = date.minute.toString().padLeft(2, '0');
+    final period = date.hour >= 12 ? 'PM' : 'AM';
+    return "$hour:$minute $period";
   }
 
   void _showMessageOptions(BuildContext context, Message message, bool isMe) {
@@ -372,21 +445,30 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
             children: [
               _buildOptionItem(context, Icons.reply, "Reply", () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Reply coming soon")));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Reply coming soon")),
+                );
               }),
               _buildOptionItem(context, Icons.copy, "Copy", () {
                 Navigator.pop(context);
                 Clipboard.setData(ClipboardData(text: message.text));
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Copied")));
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text("Copied")));
               }),
               _buildOptionItem(context, Icons.forward, "Forward", () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Forward coming soon")));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Forward coming soon")),
+                );
               }),
               if (isMe)
                 _buildOptionItem(context, Icons.delete_outline, "Delete", () {
                   Navigator.pop(context);
-                  Provider.of<ChatProvider>(context, listen: false).deleteMessage(message.id);
+                  Provider.of<ChatProvider>(
+                    context,
+                    listen: false,
+                  ).deleteMessage(message.id);
                 }, color: Colors.redAccent),
             ],
           ),
@@ -395,7 +477,13 @@ class _FriendsChatScreenState extends State<FriendsChatScreen> {
     );
   }
 
-  Widget _buildOptionItem(BuildContext context, IconData icon, String label, VoidCallback onTap, {Color color = Colors.white}) {
+  Widget _buildOptionItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap, {
+    Color color = Colors.white,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Padding(

@@ -1,5 +1,4 @@
-import 'package:cconnect/common/widgets/appbar/custom_appbar.dart';
-import 'package:cconnect/common/widgets/forms/custom_textformfield.dart';
+import 'package:cconnect/data/models/conversation.dart';
 import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/features/chat/controllers/chat_provider.dart';
 import 'package:cconnect/features/chat/screens/groups/create_group_screen.dart';
@@ -9,10 +8,10 @@ import 'package:cconnect/features/chat/screens/widgets/group_info_popup.dart';
 import 'package:cconnect/features/chat/screens/widgets/user_search_item.dart';
 import 'package:cconnect/features/personalization/controllers/userProvider.dart';
 import 'package:cconnect/utils/constraints/appicons.dart';
-import 'package:cconnect/utils/constraints/enums.dart';
 import 'package:cconnect/utils/constraints/sizing.dart';
 import 'package:cconnect/utils/constraints/strings.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -28,70 +27,102 @@ class _ChatScreenState extends State<ChatScreen> {
   String _searchQuery = '';
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
     final chatProvider = Provider.of<ChatProvider>(context);
-    final currentUser = userProvider.user;
+    final currentUser = Provider.of<UserProvider>(context).user;
 
     if (currentUser == null) return const Center(child: CircularProgressIndicator());
-
-    // Ensure current user is set in provider
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (chatProvider.currentUserId == null) {
-        chatProvider.setCurrentUser(currentUser.id);
-      }
-    });
+    if (chatProvider.currentUserId == null) {
+      chatProvider.setCurrentUser(currentUser.id);
+    }
 
     return Scaffold(
-      appBar: CustomAppBar(
-        title: AppStrings.chat,
-        centerTitle: true,
-        actions: [
-          // Only show Create Group for mentor, manager, admin
-          if (currentUser.role == UserRole.mentor || 
-              currentUser.role == UserRole.manager || 
-              currentUser.role == UserRole.admin)
-            IconButton(
-              icon: const Icon(Icons.group_add),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
-                );
-              },
-            ),
-        ],
-      ),
-      body: Padding(
-        padding: Sizing.paddingAll16,
+      body: SafeArea(
         child: Column(
           children: [
-            // Search Bar
-            CustomTextFormField(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              hintText: AppStrings.search,
-              labelText: AppStrings.search,
-              svgIcon: searchIcon, 
-              onChanged: (val) {
-                setState(() {
-                  _searchQuery = val;
-                });
-              },
+            Padding(
+              padding: Sizing.paddingAll16,
+              child: TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.trim();
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: AppStrings.search,
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                ),
+              ),
             ),
-            Sizing.h16,
-            
-            // Content
             Expanded(
-              child: _searchQuery.isNotEmpty
-                  ? _buildSearchResults(chatProvider)
-                  : _buildRecentChats(chatProvider),
+              child: _searchQuery.isEmpty
+                  ? _buildConversationList(chatProvider)
+                  : _buildSearchResults(chatProvider),
             ),
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
+          );
+        },
+        child: const Icon(Icons.group_add),
+      ),
+    );
+  }
 
+  Widget _buildConversationList(ChatProvider chatProvider) {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: chatProvider.getConversations(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text("Error: ${snapshot.error}"));
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text(AppStrings.noChats));
+        }
+
+        final conversations = snapshot.data!;
+        return ListView.builder(
+          itemCount: conversations.length,
+          itemBuilder: (context, index) {
+            return ConversationListItem(
+              conversation: conversations[index],
+              chatProvider: chatProvider,
+            );
+          },
+        );
+      },
     );
   }
 
@@ -162,51 +193,6 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ],
           ],
-        );
-      },
-    );
-  }
-
-  Widget _buildRecentChats(ChatProvider chatProvider) {
-    // Ensure current user is set
-    if (chatProvider.currentUserId == null) {
-       final currentUser = Provider.of<UserProvider>(context, listen: false).user;
-       if (currentUser != null) {
-         chatProvider.setCurrentUser(currentUser.id);
-       }
-    }
-
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: chatProvider.getConversations(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
-        }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
-                Text(AppStrings.startConversation, style: TextStyle(color: Colors.grey)),
-              ],
-            ),
-          );
-        }
-
-        final conversations = snapshot.data!;
-        return ListView.builder(
-          itemCount: conversations.length,
-          itemBuilder: (context, index) {
-            return ConversationListItem(
-              conversation: conversations[index],
-              chatProvider: chatProvider,
-            );
-          },
         );
       },
     );

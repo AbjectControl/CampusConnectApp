@@ -2,7 +2,9 @@ import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/admin_repository.dart';
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/mentorship_repository.dart';
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
+import 'package:cconnect/data/repositories/interfaces/iuser.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -141,6 +143,7 @@ class _MentorshipTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userRepository = Provider.of<IUserRepository>(context, listen: false);
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: MentorshipRepository.instance.getMentorshipRequests(),
       builder: (context, snapshot) {
@@ -163,7 +166,7 @@ class _MentorshipTab extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: FutureBuilder<User?>(
-                  future: UserRepository.instance.fetchUser(request['userId']),
+                  future: userRepository.fetchUser(request['userId']),
                   builder: (context, userSnapshot) {
                     final user = userSnapshot.data;
                     

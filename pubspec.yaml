@@ -61,6 +61,9 @@ dependencies:
   path: ^1.9.1
   awesome_snackbar_content: ^0.1.7
   uuid: ^4.5.2
+  emoji_picker_flutter: ^4.4.0
+  gallery_saver_plus: ^3.2.9
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

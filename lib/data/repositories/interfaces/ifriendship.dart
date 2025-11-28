@@ -4,4 +4,5 @@ abstract class IFriendshipRepository {
   Future<Friendship> sendRequest(String requesterId, String recipientId);
   Future<void> respondToRequest(String friendshipId, bool accept);
   Future<List<Friendship>> listFriends(String userId);
+  Future<Friendship?> getFriendship(String userId1, String userId2);
 }

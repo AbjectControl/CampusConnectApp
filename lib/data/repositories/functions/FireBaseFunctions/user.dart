@@ -7,9 +7,11 @@ class UserRepository implements IUserRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collection = 'users';
 
-  // Singleton instance
-  static final UserRepository instance = UserRepository._();
-  UserRepository._();
+  // Singleton instance removed for SOLID compliance (Dependency Injection)
+  // static final UserRepository instance = UserRepository._();
+  // UserRepository._();
+  
+  UserRepository();
 
   @override
   Future<User> getById(String id) async {
@@ -81,21 +83,6 @@ class UserRepository implements IUserRepository {
       for (var doc in emailSnap.docs) {
         if (!result.any((u) => u.id == doc.id)) {
           result.add(User.fromJson(doc.data()));
-        }
-      }
-
-      // 🔹 Search by student ID (supports both exact and prefix match)
-      if (query.isNotEmpty) {
-        final studentIdSnap = await _firestore
-            .collection(_collection)
-            .where('studentId', isGreaterThanOrEqualTo: query)
-            .where('studentId', isLessThanOrEqualTo: '$query\uf8ff')
-            .get();
-
-        for (var doc in studentIdSnap.docs) {
-          if (!result.any((u) => u.id == doc.id)) {
-            result.add(User.fromJson(doc.data()));
-          }
         }
       }
 

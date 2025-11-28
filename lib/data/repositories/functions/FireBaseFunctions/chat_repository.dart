@@ -15,9 +15,11 @@ class ChatRepository implements IChatRepository, IGroupRepository {
   Future<void> sendMessage(Message message) async {
     // 1. Save Message
     await _db.collection('messages').doc(message.id).set(message.toJson());
-    
+
     // 2. Update Conversation
-    final conversationRef = _db.collection('conversations').doc(message.conversationId);
+    final conversationRef = _db
+        .collection('conversations')
+        .doc(message.conversationId);
     final conversationDoc = await conversationRef.get();
 
     if (!conversationDoc.exists) {
@@ -26,7 +28,7 @@ class ChatRepository implements IChatRepository, IGroupRepository {
       if (message.conversationId.contains('_')) {
         participants = message.conversationId.split('_');
       } else {
-        participants = [message.senderId]; 
+        participants = [message.senderId];
       }
 
       // Fetch user data for denormalization
@@ -49,20 +51,18 @@ class ChatRepository implements IChatRepository, IGroupRepository {
         'lastMessage': message.text,
         'lastMessageTime': message.sentAt.toIso8601String(),
         'unreadCounts': {
-          for (var id in participants) 
-            id: (id == message.senderId) ? 0 : 1
+          for (var id in participants) id: (id == message.senderId) ? 0 : 1,
         },
         'isGroup': false,
       });
     } else {
       // Update existing conversation
-      // Increment unread count for everyone except sender
       final data = conversationDoc.data() as Map<String, dynamic>;
-      final unreadCounts = Map<String, dynamic>.from(data['unreadCounts'] ?? {});
-      
-      // Get participants to ensure we cover everyone
+      final unreadCounts = Map<String, dynamic>.from(
+        data['unreadCounts'] ?? {},
+      );
       final participants = List<String>.from(data['participants'] ?? []);
-      
+
       for (var id in participants) {
         if (id != message.senderId) {
           unreadCounts[id] = (unreadCounts[id] ?? 0) + 1;
@@ -84,43 +84,70 @@ class ChatRepository implements IChatRepository, IGroupRepository {
         .where('conversationId', isEqualTo: conversationId)
         .orderBy('sentAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Message.fromJson(doc.data()))
-            .toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Message.fromJson(doc.data())).toList(),
+        );
   }
 
   @override
-  Future<List<Message>> fetchRecentMessages(String conversationId, {int limit = 50}) async {
+  Future<List<Message>> fetchRecentMessages(
+    String conversationId, {
+    int limit = 50,
+  }) async {
     final snapshot = await _db
         .collection('messages')
         .where('conversationId', isEqualTo: conversationId)
         .orderBy('sentAt', descending: true)
         .limit(limit)
         .get();
-    
+
     return snapshot.docs.map((doc) => Message.fromJson(doc.data())).toList();
   }
 
   @override
-  Future<void> markRead(String conversationId, String messageId, String userId) async {
-    // 1. Mark specific message as read
-    // Note: In a real app, we might batch this or only mark the latest message.
-    // Here we assume messageId is the latest one or we just update the conversation unread count.
-    
-    // Update conversation unread count for this user to 0
+  Future<void> markRead(
+    String conversationId,
+    String messageId,
+    String userId,
+  ) async {
     final conversationRef = _db.collection('conversations').doc(conversationId);
-    await conversationRef.update({
-      'unreadCounts.$userId': 0,
-    });
-    
-    // Also add user to readBy of the message (optional, for ticks)
-    // This requires knowing which messages are unread. 
-    // For simplicity, we might just update the 'readBy' of the passed messageId if provided.
+
+    // Set unread count for this user to 0
+    await conversationRef.update({'unreadCounts.$userId': 0});
+
+    // If particular message provided, add user to readBy array
     if (messageId.isNotEmpty) {
-       await _db.collection('messages').doc(messageId).update({
-         'readBy': FieldValue.arrayUnion([userId])
-       });
+      await _db.collection('messages').doc(messageId).update({
+        'readBy': FieldValue.arrayUnion([userId]),
+      });
     }
+  }
+
+  @override
+  Future<void> markMessagesAsRead(String conversationId, String userId) async {
+    // Update conversation unread count
+    final conversationRef = _db.collection('conversations').doc(conversationId);
+    await conversationRef.update({'unreadCounts.$userId': 0});
+
+    // Optionally mark multiple messages' readBy - here we mark recent unread messages
+    final query = await _db
+        .collection('messages')
+        .where('conversationId', isEqualTo: conversationId)
+        .orderBy('sentAt', descending: false)
+        .get();
+
+    final batch = _db.batch();
+    for (final doc in query.docs) {
+      final data = doc.data();
+      final readBy = List<String>.from(data['readBy'] ?? []);
+      if (!readBy.contains(userId)) {
+        batch.update(doc.reference, {
+          'readBy': FieldValue.arrayUnion([userId]),
+        });
+      }
+    }
+    await batch.commit();
   }
 
   @override
@@ -129,7 +156,11 @@ class ChatRepository implements IChatRepository, IGroupRepository {
         .collection('conversations')
         .where('participants', arrayContains: userId)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => doc.data() as Map<String, dynamic>)
+              .toList(),
+        );
   }
 
   // --- IGroupRepository Implementation ---
@@ -143,7 +174,7 @@ class ChatRepository implements IChatRepository, IGroupRepository {
   @override
   Future<void> joinGroup(String groupId, String userId) async {
     await _db.collection('groups').doc(groupId).update({
-      'members': FieldValue.arrayUnion([userId])
+      'members': FieldValue.arrayUnion([userId]),
     });
   }
 
@@ -153,16 +184,22 @@ class ChatRepository implements IChatRepository, IGroupRepository {
         .collection('groups')
         .where('members', arrayContains: userId)
         .get();
-    
-    return snapshot.docs.map((doc) => GroupCommunity.fromJson(doc.data())).toList();
+
+    return snapshot.docs
+        .map((doc) => GroupCommunity.fromJson(doc.data()))
+        .toList();
   }
 
   @override
-  Future<String> createGroupChat(String name, List<String> userIds, String creatorId) async {
+  Future<String> createGroupChat(
+    String name,
+    List<String> userIds,
+    String creatorId,
+  ) async {
     try {
       final groupId = const Uuid().v4();
       final now = DateTime.now();
-      
+
       if (!userIds.contains(creatorId)) {
         userIds.add(creatorId);
       }
@@ -204,24 +241,25 @@ class ChatRepository implements IChatRepository, IGroupRepository {
   @override
   Future<List<GroupCommunity>> searchGroups(String query) async {
     if (query.isEmpty) return [];
-    
-    // Note: Firestore doesn't support native full-text search.
-    // We'll use a simple startAt/endAt query for prefix matching on 'name'.
-    // For production, use Algolia or ElasticSearch.
+
     final snapshot = await _db
         .collection('groups')
         .where('name', isGreaterThanOrEqualTo: query)
         .where('name', isLessThan: query + 'z')
         .get();
 
-    return snapshot.docs.map((doc) => GroupCommunity.fromJson(doc.data())).toList();
+    return snapshot.docs
+        .map((doc) => GroupCommunity.fromJson(doc.data()))
+        .toList();
   }
 
-  // Helper methods (not part of interface but useful)
+  // Helper methods
+
+  @override
   Future<void> deleteMessage(String messageId) async {
     await _db.collection('messages').doc(messageId).delete();
   }
-  
+
   Future<User?> getUserById(String id) async {
     final doc = await _db.collection('users').doc(id).get();
     if (doc.exists) {

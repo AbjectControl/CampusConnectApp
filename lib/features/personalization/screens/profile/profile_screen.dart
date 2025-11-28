@@ -20,9 +20,7 @@ class ProfileScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -37,7 +35,9 @@ class ProfileScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const AdminDashboardScreen(),
+                  ),
                 );
               },
             ),
@@ -71,12 +71,10 @@ class ProfileScreen extends StatelessWidget {
             if (user.studentId != null)
               Text(
                 "${AppStrings.studentId}: ${user.studentId}",
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: Colors.grey,
-                ),
+                style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey),
               ),
             Sizing.h32,
-            
+
             // Personal Details Section
             Container(
               padding: Sizing.paddingAll16,
@@ -117,9 +115,9 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             Sizing.h32,
-            
+
             // Edit Profile Button
             ElevatedButton(
               onPressed: () {
@@ -142,9 +140,9 @@ class ProfileScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
-            
+
             Sizing.h24,
-            
+
             // Log Out Button
             TextButton.icon(
               onPressed: () async {
@@ -171,7 +169,12 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(BuildContext context, {required IconData icon, required String label, required String value}) {
+  Widget _buildDetailRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     return Row(
       children: [
         Container(
@@ -189,16 +192,16 @@ class ProfileScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),

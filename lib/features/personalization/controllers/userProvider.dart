@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cconnect/data/models/userModel.dart' as model;
-import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
+import 'package:cconnect/data/repositories/interfaces/iuser.dart';
 
 class UserProvider extends ChangeNotifier {
+  final IUserRepository _userRepository;
+
+  UserProvider({required IUserRepository userRepository}) 
+      : _userRepository = userRepository;
+
   model.User? _user;
   model.User? get user => _user;
 
@@ -42,7 +47,7 @@ class UserProvider extends ChangeNotifier {
     // Update remote
     // We use a fire-and-forget approach or await if critical
     try {
-      await UserRepository.instance.update(updatedUser);
+      await _userRepository.update(updatedUser);
     } catch (e) {
       print("Failed to update online status: $e");
     }

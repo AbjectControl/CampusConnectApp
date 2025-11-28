@@ -2,7 +2,7 @@ import 'package:cconnect/common/widgets/loaders/fullscreen_loader.dart';
 import 'package:cconnect/common/widgets/navigation/main_nav_screen.dart';
 import 'package:cconnect/data/models/userModel.dart';
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/authentication.dart';
-import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
+import 'package:cconnect/data/repositories/interfaces/iuser.dart';
 import 'package:cconnect/features/authentication/screens/onboarding/onboarding_screen.dart';
 import 'package:cconnect/features/personalization/screens/complete_profile/complete_profile_screen.dart';
 import 'package:cconnect/features/personalization/controllers/userProvider.dart';
@@ -17,6 +17,7 @@ class AuthGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final userRepository = Provider.of<IUserRepository>(context, listen: false);
 
     return StreamBuilder<fb.User?>(
       stream: FirebaseAuthRepository().authStateChanges,
@@ -29,7 +30,7 @@ class AuthGate extends StatelessWidget {
           final user = snapshot.data!;
 
           return FutureBuilder<User?>(
-            future: UserRepository.instance.fetchUser(user.uid),
+            future: userRepository.fetchUser(user.uid),
             builder: (context, userSnapshot) {
               if (userSnapshot.connectionState == ConnectionState.waiting) {
                 return Scaffold(
@@ -44,27 +45,32 @@ class AuthGate extends StatelessWidget {
 
               if (userSnapshot.hasData) {
                 final appUser = userSnapshot.data!;
-                
+
                 // Use addPostFrameCallback to avoid setState during build
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                   Provider.of<UserProvider>(
+                  Provider.of<UserProvider>(
                     context,
                     listen: false,
                   ).setUser(appUser);
                 });
 
                 // Check for incomplete profile
-                // We check name, studentId, phone, department, and section
-                // PhotoUrl is optional but user code checked it. I'll check it too as requested.
-                final isProfileIncomplete = appUser.displayName.isEmpty ||
-                    (appUser.studentId == null || appUser.studentId!.isEmpty) ||
-                    (appUser.phone == null || appUser.phone!.isEmpty) ||
-                    (appUser.photoUrl == null || appUser.photoUrl!.isEmpty) ||
-                    (appUser.department == null || appUser.department!.isEmpty) ||
-                    (appUser.section == null || appUser.section!.isEmpty);
+                // Check all required fields: name, studentId, phone, department, section, and photoUrl
+                final isProfileIncomplete =
+                    appUser.displayName.isEmpty ||
+                    appUser.studentId == null ||
+                    appUser.studentId!.isEmpty ||
+                    appUser.phone == null ||
+                    appUser.phone!.isEmpty ||
+                    appUser.department == null ||
+                    appUser.department!.isEmpty ||
+                    appUser.section == null ||
+                    appUser.section!.isEmpty ||
+                    appUser.photoUrl == null ||
+                    appUser.photoUrl!.isEmpty;
 
                 if (isProfileIncomplete) {
-                  return const CompleteProfileScreen();
+                  return CompleteProfileScreen(user: appUser);
                 }
 
                 return const MainNavScreen();

@@ -11,14 +11,40 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/chat_repository.dart';
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/friendship_repository.dart';
+import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
+import 'package:cconnect/data/repositories/interfaces/ichat.dart';
+import 'package:cconnect/data/repositories/interfaces/ifriendship.dart';
+import 'package:cconnect/data/repositories/interfaces/igroup.dart';
+import 'package:cconnect/data/repositories/interfaces/iuser.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        // Repositories (Services)
+        Provider<IUserRepository>(create: (_) => UserRepository()),
+        Provider<IChatRepository>(create: (_) => ChatRepository()),
+        Provider<IGroupRepository>(create: (_) => ChatRepository()),
+        Provider<IFriendshipRepository>(create: (_) => FriendshipRepository()),
+
+        // ViewModels (Providers)
+        ChangeNotifierProvider(
+          create: (context) =>
+              UserProvider(userRepository: context.read<IUserRepository>()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ChatProvider(
+            chatRepository: ChatRepository(),
+            groupRepository:
+                ChatRepository(), // ChatRepository implements IGroupRepository
+            friendshipRepository: FriendshipRepository(),
+            userRepository: UserRepository(),
+          ),
+        ),
       ],
       child: MyApp(),
     ),
@@ -50,7 +76,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     if (state == AppLifecycleState.resumed) {
       userProvider.updateOnlineStatus(true);
-    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
       userProvider.updateOnlineStatus(false);
     }
   }

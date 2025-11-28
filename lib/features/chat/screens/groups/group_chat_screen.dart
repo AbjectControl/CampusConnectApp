@@ -1,9 +1,7 @@
 import 'package:cconnect/common/widgets/appbar/custom_appbar.dart';
 import 'package:cconnect/data/models/message.dart';
 import 'package:cconnect/data/models/userModel.dart';
-import 'package:cconnect/data/models/groupCommunity.dart';
 import 'package:cconnect/features/chat/controllers/chat_provider.dart';
-import 'package:cconnect/features/chat/screens/widgets/group_info_popup.dart';
 import 'package:cconnect/features/personalization/controllers/userProvider.dart';
 import 'package:cconnect/utils/constraints/sizing.dart';
 import 'package:cconnect/utils/constraints/strings.dart';
@@ -47,51 +45,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     return "${time.hour}:${time.minute.toString().padLeft(2, '0')}";
   }
 
-  void _showGroupInfo() async {
-    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-    // Fetch group details - assuming it's stored in conversations
-    // For now, create a basic GroupCommunity object
-    final group = GroupCommunity(
-      id: widget.groupId,
-      name: widget.groupName,
-      description: 'Group chat',
-      ownerId: '',
-      members: [],
-    );
-    
-    showDialog(
-      context: context,
-      builder: (_) => GroupInfoPopup(group: group),
-    );
-  }
-
-  void _exitGroup() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Exit Group'),
-        content: Text('Are you sure you want to exit "${widget.groupName}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back to chat list
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Left group successfully')),
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Exit'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -126,11 +79,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.black),
             onSelected: (value) {
-              if (value == 'info') {
-                _showGroupInfo();
-              } else if (value == 'exit') {
-                _exitGroup();
-              }
+              // Handle menu actions
             },
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'info', child: Text('Group Info')),
@@ -171,12 +120,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         // Check if previous message was from same sender
                         final bool isFirstInSequence = index == messages.length - 1 || 
                             messages[index + 1].senderId != message.senderId;
-                        
-                        // Unread message logic for group
-                        bool isUnreadByMe = !isMe && !message.readBy.contains(currentUserId);
-                        
-                        // Read receipts - count how many have read
-                        int readCount = message.readBy.length;
 
                         return Align(
                           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -204,14 +147,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                 margin: const EdgeInsets.symmetric(vertical: 2),
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                 decoration: BoxDecoration(
-                                  color: isMe 
-                                      ? const Color(0xFF2196F3) 
-                                      : (isUnreadByMe 
-                                          ? const Color(0xFFE3F2FD) 
-                                          : Colors.white),
-                                  border: isUnreadByMe 
-                                      ? Border.all(color: const Color(0xFF2196F3), width: 1.5)
-                                      : null,
+                                  color: isMe ? const Color(0xFF2196F3) : Colors.white,
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
@@ -233,33 +169,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 4),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          _formatTime(message.sentAt),
-                                          style: TextStyle(
-                                            color: isMe ? Colors.white70 : Colors.grey,
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                        if (isMe && readCount > 0) ...[
-                                          const SizedBox(width: 4),
-                                          Icon(
-                                            Icons.done_all,
-                                            size: 14,
-                                            color: readCount > 1 ? Colors.blueAccent : Colors.white70,
-                                          ),
-                                          const SizedBox(width: 2),
-                                          Text(
-                                            '$readCount',
-                                            style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                        ],
-                                      ],
+                                    Text(
+                                      _formatTime(message.sentAt),
+                                      style: TextStyle(
+                                        color: isMe ? Colors.white70 : Colors.grey,
+                                        fontSize: 11,
+                                      ),
                                     ),
                                   ],
                                 ),

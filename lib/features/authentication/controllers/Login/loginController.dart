@@ -23,16 +23,24 @@ class LoginController {
 
     try {
       // 1️⃣ Login to Firebase auth
-      final user = await authRepo.signInWithEmail(email, password);
+      await authRepo.signInWithEmail(email, password);
 
-      // ignore: unnecessary_null_comparison
-      if (user == null) {
-        onError("User record not found");
+      // 2️⃣ Get current Firebase user
+      final fbUser = await authRepo.currentUser();
+      if (fbUser == null) {
+        onError("Authentication failed");
         return;
       }
 
-      // 3️⃣ Store in Provider
-      Provider.of<UserProvider>(context, listen: false).setUser(user);
+      // 3️⃣ Fetch complete user data from Firestore
+      final completeUser = await userRepo.fetchUser(fbUser.id);
+      if (completeUser == null) {
+        onError("User record not found in database");
+        return;
+      }
+
+      // 4️⃣ Store complete user in Provider
+      Provider.of<UserProvider>(context, listen: false).setUser(completeUser);
 
       // 4️⃣ Trigger success handler
       onSuccess();

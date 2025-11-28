@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:cconnect/common/widgets/forms/custom_textformfield.dart';
 import 'package:cconnect/common/widgets/texts/text_widget.dart';
 import 'package:cconnect/data/models/userModel.dart' as model;
-import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
+import 'package:cconnect/data/repositories/interfaces/iuser.dart';
 import 'package:cconnect/features/personalization/controllers/userProvider.dart';
 import 'package:cconnect/routes/routes.dart';
 import 'package:cconnect/utils/constraints/appicons.dart';
@@ -17,7 +17,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
-  const CompleteProfileScreen({super.key});
+  final model.User? user;
+  const CompleteProfileScreen({super.key, this.user});
 
   @override
   State<CompleteProfileScreen> createState() => _CompleteProfileScreenState();
@@ -28,11 +29,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
   final studentIdController = TextEditingController();
-  final departmentController = TextEditingController();
-  final sectionController = TextEditingController();
+  final departmentController = TextEditingController(); // Added department controller
+  final sectionController = TextEditingController(); // Added section controller
   final CloudinaryService _cloudinary = CloudinaryService();
-
-  String? _selectedDepartment; // Track dropdown selection separately
 
   // File? _selectedImage; // Removed File dependency for web support
   XFile? _selectedImage; // Use XFile instead
@@ -49,7 +48,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   
   Future<void> _loadUserData() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final user = userProvider.user;
+    final user = widget.user ?? userProvider.user;
     if (user != null) {
       nameController.text = user.displayName;
       
@@ -61,8 +60,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         studentIdController.text = user.studentId!;
       }
 
-      if (user.department != null && user.department!.isNotEmpty) {
-        _selectedDepartment = user.department;
+      if (user.department != null) {
         departmentController.text = user.department!;
       }
 
@@ -130,7 +128,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           metadata: currentUser.metadata,
         );
 
-        await UserRepository.instance.update(updatedUser);
+        final userRepository = Provider.of<IUserRepository>(context, listen: false);
+        await userRepository.update(updatedUser);
         userProvider.setUser(updatedUser);
 
         SnackbarService.success("Profile updated successfully");
@@ -225,49 +224,27 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       controller: studentIdController,
                       labelText: "Student ID",
                       hintText: "e.g. l23XXXX",
-                      svgIcon: userIcon,
+                      svgIcon: userIcon, // Using userIcon as placeholder
                       validator: (value) => value == null || value.isEmpty
                           ? AppStrings.requiredField
                           : null,
                     ),
                     Sizing.h16,
-                    DropdownButtonFormField<String>(
-                      value: _selectedDepartment,
-                      decoration: InputDecoration(
-                        labelText: "Department",
-                        hintText: "Select your department",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: "Computer Science", child: Text("Computer Science")),
-                        DropdownMenuItem(value: "Data Science", child: Text("Data Science")),
-                        DropdownMenuItem(value: "Artificial Intelligence", child: Text("Artificial Intelligence")),
-                        DropdownMenuItem(value: "Business", child: Text("Business")),
-                        DropdownMenuItem(value: "Civil Engineering", child: Text("Civil Engineering")),
-                        DropdownMenuItem(value: "Software Engineering", child: Text("Software Engineering")),
-                        DropdownMenuItem(value: "Electrical Engineering", child: Text("Electrical Engineering")),
-                        DropdownMenuItem(value: "Cyber Security", child: Text("Cyber Security")),
-                        DropdownMenuItem(value: "Fintech", child: Text("Fintech")),
-                      ],
+                    CustomTextFormField(
+                      controller: departmentController,
+                      labelText: "Department",
+                      hintText: "e.g. CS, SE, BBA",
+                      svgIcon: userIcon, // Using userIcon as placeholder
                       validator: (value) => value == null || value.isEmpty
                           ? AppStrings.requiredField
                           : null,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedDepartment = value;
-                          departmentController.text = value ?? '';
-                        });
-                      },
                     ),
                     Sizing.h16,
                     CustomTextFormField(
                       controller: sectionController,
                       labelText: "Section",
                       hintText: "e.g. A, B, C",
-                      svgIcon: userIcon,
+                      svgIcon: userIcon, // Using userIcon as placeholder
                       validator: (value) => value == null || value.isEmpty
                           ? AppStrings.requiredField
                           : null,
@@ -278,7 +255,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       labelText: AppStrings.phoneLabel,
                       hintText: "03XX-XXXXXXX or +923XX-XXXXXXX",
                       keyboardType: TextInputType.phone,
-                      svgIcon: phoneIcon,
+                      svgIcon: phoneIcon, // Assuming phoneIcon exists in appicons.dart, need to check
+                      // inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Removed to allow +
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return AppStrings.requiredField;
@@ -302,7 +280,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       ),
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(AppStrings.continueBtn),
+                          : const Text(AppStrings.continueBtn), // Using continueBtn from strings
                     ),
                   ],
                 ),

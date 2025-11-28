@@ -1,8 +1,9 @@
 import 'package:cconnect/common/widgets/loaders/fullscreen_loader.dart';
 import 'package:cconnect/common/widgets/texts/text_widget.dart';
 import 'package:cconnect/data/repositories/functions/FireBaseFunctions/authentication.dart';
-import 'package:cconnect/data/repositories/functions/FireBaseFunctions/user.dart';
+import 'package:cconnect/data/repositories/interfaces/iuser.dart';
 import 'package:cconnect/features/authentication/controllers/Login/loginController.dart';
+import 'package:provider/provider.dart';
 import 'package:cconnect/features/authentication/screens/login/widgets/login_form.dart';
 import 'package:cconnect/routes/routes.dart';
 import 'package:cconnect/utils/constraints/appicons.dart';
@@ -26,10 +27,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool loading = false;
 
-  late final loginCtrl = LoginController(
-    authRepo: FirebaseAuthRepository(),
-    userRepo: UserRepository.instance,
-  );
+  late LoginController loginCtrl;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    loginCtrl = LoginController(
+      authRepo: FirebaseAuthRepository(),
+      userRepo: Provider.of<IUserRepository>(context, listen: false),
+    );
+  }
 
   void setLoading(bool v) {
     if (mounted) setState(() => loading = v);

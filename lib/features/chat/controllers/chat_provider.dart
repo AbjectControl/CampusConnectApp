@@ -10,11 +10,30 @@ import 'package:cconnect/utils/constraints/enums.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:cconnect/data/repositories/interfaces/ifriendship.dart';
+import 'package:cconnect/data/repositories/interfaces/iuser.dart';
+
 class ChatProvider extends ChangeNotifier {
   // Dependency Injection (DIP) - using interfaces
-  final IChatRepository _chatRepository = ChatRepository();
-  final IGroupRepository _groupRepository = ChatRepository();
-  
+  final IChatRepository _chatRepository;
+  final IGroupRepository _groupRepository;
+  final IFriendshipRepository _friendshipRepository;
+  final IUserRepository _userRepository;
+
+  ChatProvider({
+    required IChatRepository chatRepository,
+    required IGroupRepository groupRepository,
+    required IFriendshipRepository friendshipRepository,
+    required IUserRepository userRepository,
+  }) : _chatRepository = chatRepository,
+       _groupRepository = groupRepository,
+       _friendshipRepository = friendshipRepository,
+       _userRepository = userRepository;
+
+  // Fix: matching field names
+  // Note: your original used _friendshipRepository and _userRepository — keep them consistent
+  // (rename back if you prefer). For clarity here I'm using the original provided names below.
+
   String? currentUserId;
 
   void setCurrentUser(String userId) {
@@ -26,7 +45,11 @@ class ChatProvider extends ChangeNotifier {
     return _chatRepository.subscribeToMessages(conversationId);
   }
 
-  Future<void> sendMessage(String conversationId, String text, {MessageType type = MessageType.text}) async {
+  Future<void> sendMessage(
+    String conversationId,
+    String text, {
+    MessageType type = MessageType.text,
+  }) async {
     if (text.trim().isEmpty || currentUserId == null) return;
 
     final message = Message(
@@ -36,87 +59,75 @@ class ChatProvider extends ChangeNotifier {
       text: text.trim(),
       type: type,
       sentAt: DateTime.now(),
+      readBy: [], // ensure default
     );
 
     await _chatRepository.sendMessage(message);
   }
 
+  Future<void> deleteMessage(String messageId) async {
+    await _chatRepository.deleteMessage(messageId);
+  }
+
+  // New wrappers so UI doesn't need to pass currentUserId each time
   Future<void> markRead(String conversationId, String messageId) async {
     if (currentUserId == null) return;
     await _chatRepository.markRead(conversationId, messageId, currentUserId!);
   }
 
-  Future<void> deleteMessage(String messageId) async {
-    // Cast to concrete implementation if needed, or add to interface if common
-    // For now, assuming ChatRepository has it or we add it to IChatRepository
-    // But since it's not in IChatRepository, we might need to add it or cast.
-    // Ideally, add to IChatRepository. For now, let's use the concrete instance method if possible
-    // or just skip if not in interface. 
-    // Wait, I should have added it to IChatRepository. Let's fix that later.
-    // For now, I'll temporarily cast or just instantiate concrete for this specific method
-    // OR better, I'll update the interface in the next step if I missed it.
-    // Actually, I missed adding deleteMessage to IChatRepository. 
-    // I will add it to the interface in a separate step to be clean.
-    // For now, I will comment it out or use a workaround.
-    // Workaround: ( _chatRepository as ChatRepository).deleteMessage(messageId);
-    if (_chatRepository is ChatRepository) {
-      await (_chatRepository as ChatRepository).deleteMessage(messageId);
-    }
+  Future<void> markMessagesAsRead(String conversationId) async {
+    if (currentUserId == null) return;
+    await _chatRepository.markMessagesAsRead(conversationId, currentUserId!);
   }
 
   // SRP - Use UserRepository for search
   Stream<List<User>> searchUsers(String query) async* {
     if (query.isEmpty) {
-      yield []; 
+      yield [];
       return;
     }
     // Convert Future to Stream for compatibility with UI
-    final users = await UserRepository.instance.searchByNameOrEmail(query);
+    final users = await _userRepository.searchByNameOrEmail(query);
     yield users;
   }
 
-
-  
   Future<List<dynamic>> searchGroups(String query) async {
     if (query.isEmpty) return [];
     return await _groupRepository.searchGroups(query);
   }
 
   // Friendship Methods
-  final FriendshipRepository _friendshipRepository = FriendshipRepository();
-
   Future<void> sendFriendRequest(String recipientId) async {
     if (currentUserId == null) return;
-    await _friendshipRepository.sendFriendRequest(currentUserId!, recipientId);
+    await _friendshipRepository.sendRequest(currentUserId!, recipientId);
   }
 
   Future<void> acceptFriendRequest(String friendshipId) async {
-    await _friendshipRepository.acceptFriendRequest(friendshipId);
+    await _friendshipRepository.respondToRequest(friendshipId, true);
   }
 
   Future<void> rejectFriendRequest(String friendshipId) async {
-    await _friendshipRepository.rejectFriendRequest(friendshipId);
+    await _friendshipRepository.respondToRequest(friendshipId, false);
   }
 
-  Future<void> unfriend(String otherUserId) async {
-    if (currentUserId != null) {
-      await _friendshipRepository.unfriend(currentUserId!, otherUserId);
-    }
+  Future<void> unfriend(String friendshipId) async {
+    await _friendshipRepository.respondToRequest(friendshipId, false);
   }
 
   Future<Friendship?> getFriendship(String otherUserId) async {
     if (currentUserId == null) return null;
-    return await _friendshipRepository.getFriendship(currentUserId!, otherUserId);
+    return await _friendshipRepository.getFriendship(
+      currentUserId!,
+      otherUserId,
+    );
   }
-  
-  // This method is now less critical for the list view due to denormalization,
-  // but still useful for other things.
+
   Future<User?> getUser(String userId) async {
-    return UserRepository.instance.fetchUser(userId);
+    return _userRepository.fetchUser(userId);
   }
 
   Stream<User?> getUserStream(String userId) {
-    return UserRepository.instance.getUserStream(userId);
+    return _userRepository.getUserStream(userId);
   }
 
   Stream<List<Map<String, dynamic>>> getConversations() {
@@ -126,7 +137,11 @@ class ChatProvider extends ChangeNotifier {
 
   Future<String?> createGroup(String name, List<String> userIds) async {
     if (currentUserId == null) return null;
-    return await _groupRepository.createGroupChat(name, userIds, currentUserId!);
+    return await _groupRepository.createGroupChat(
+      name,
+      userIds,
+      currentUserId!,
+    );
   }
 
   String getConversationId(String otherUserId) {
